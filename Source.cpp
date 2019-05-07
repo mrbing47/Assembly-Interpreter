@@ -12,38 +12,40 @@ using namespace std;
 
 int main() 
 {
-	string inst = "";
+
+	string input = "";
+	string label = "";
 	Compiler compiler;
 
-/*
 	bool isHLT = false;
 	do {
 
-		getline(cin,inst);
+		getline(cin,input);
 		
-		int index = charindex(inst, ':');
+		input = trim(input);
 
-		if (index != -1) 
+		if (!input.empty())
 		{
-			string label = trim(inst.substr(0, index));
-			inst = inst.substr(index + 1, inst.length());
-		
-			if (!compiler.addLabel(label))
+
+			if (strequal(input, "HLT"))
+				isHLT = true;
+			else
 			{
-				cout << "ERROR: DUPLICATE_LABEL";
-				break;
+			
+				vector<string> inst = strsplit(input, ":");
+				if (inst.size() > 1)
+					label = trim(inst[0]);
+				else
+					label = "";
+
+				compiler.execute(label, strsplit(inst[inst.size() - 1], " ,"));
+
 			}
 		}
-
-		inst = trim(inst);
-		compiler.executeInst(inst);
-
-		if (inst == "HLT")
-			isHLT = true;
-
+		
 	} while (!isHLT);
 
-	cout << "\n\n\n";
+	/*cout << "\n\n\n";
 	map<Label, Bit16> label = compiler.getLabel();
 	map<Bit16, string> inputs = compiler.getInst();
 	for (auto i = inputs.begin(); i != inputs.end(); i++)
@@ -56,9 +58,12 @@ int main()
 		cout << i->first << "\t" << i->second << endl;
 	}
 	*/
-
-	cout<<hexToDec("FFFF");
-
+	/*vector<string> inst = strsplit("MOV A,B", ":");
+	vector<string> str = strsplit(inst[inst.size() - 1], " ,");
+	for (auto i = str.begin(); i != str.end(); i++)
+	{
+		cout << *i << '.' << endl;
+	}*/
 	while (_getch() != 13);
 	return 0;
 

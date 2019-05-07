@@ -34,31 +34,14 @@ class Compiler : public Instructions
 
 public:
 	
-	void executeInst(string inst)
+	void execute(string label, vector<string> inst)
 	{
-		this->inst.insert(pair<Bit16,string>(PC,inst));
-		string opcode = inst.substr(0, 3);
-		if (opcode == "ADD")
+	
+		cout << label << '.' << endl;
+		for (auto i = inst.begin(); i != inst.end(); i++)
 		{
-			if (alphacount(inst) != 4 || inst.length() > 5)
-			{
-				cout << "ERROR: INVALID_ARGUMENTS\n";
-				return;
-			}
-			else
-			{
-				ADD(inst);
-				
-			}
+			cout << *i << '.' << endl;
 		}
-		else
-		{
-			if (opcode == "MVI")
-			{
-				string operand = inst.substr(4);
-			}
-		}
-		PC++;
 	}
 
 	bool addLabel(Label label) 
