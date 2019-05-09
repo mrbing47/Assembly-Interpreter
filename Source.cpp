@@ -5,7 +5,6 @@
 
 #include "Compiler.h"
 #include "Register.h"
-#include "typedefs.h"
 #include "functions.h"
 #include "Constants.h"
 #include "datatypes.h"
@@ -14,7 +13,7 @@ using namespace std;
 
 int main() 
 {
-
+	
 	string input = "";
 	
 
@@ -43,8 +42,8 @@ int main()
 		}
 		
 	} while (!isHLT);
-
-	cout << "Press ENTER to exit";
+	
+	cout << "\nPress ENTER to exit";
 	while (_getch() != 13);
 	return 0;
 
