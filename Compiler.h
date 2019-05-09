@@ -8,43 +8,24 @@
 #include"Register.h"
 #include "typedefs.h"
 #include "functions.h"
+#include "Constants.h"
+#include "interfaces.h"
 
 using namespace std;
 
-
-class Compiler : public Instructions
+class Compiler : public Instructions, public executeClass, public saveClass
 {
 
-	map<Bit16, string> inst;
+	map<Bit16, map<string,string>> inst;
 	map<Label, Bit16> label;
 	map<Bit16, Bit8> memory;
 	stack <pair<Regname, Bit8>> programStack;
+	bool subFlag = false;
+	bool isSaveSuccessful = false;
 
-	size_t alphacount(string inst)
-	{
-		size_t count = 0;
-		int strlen = inst.length();
-		for (int i = 0; i < strlen; i++)
-		{
-			if (inst[i] != ' ')
-				count++;
-		}
-		return count;
-	}
+	Constants constants;
 
-public:
-	
-	void execute(string label, vector<string> inst)
-	{
-	
-		cout << label << '.' << endl;
-		for (auto i = inst.begin(); i != inst.end(); i++)
-		{
-			cout << *i << '.' << endl;
-		}
-	}
-
-	bool addLabel(Label label) 
+	bool addLabel(Label label)
 	{
 		try {
 
@@ -58,14 +39,59 @@ public:
 		}
 	}
 
-	map<Label, Bit16> getLabel()
+	void addInst(map<string, string> mapinst)
 	{
-		return this->label;
+		this->inst.insert(pair<Bit16, map<string, string>>(PC, mapinst));
 	}
 
-	map<Bit16, string> getInst()
+	Compiler(){}
+
+public:
+	
+	void execute()
 	{
-		return this->inst;
+		map<string, string> op = this->inst[PC];
+
+		for (auto i = op.begin(); i != op.end(); i++)
+		{
+			cout << i->first << '\t' << i->second << endl;
+		}
+		
+		PC++;
+	}
+	
+	static saveClass* create() {
+		return new Compiler();
+	}
+
+	executeClass* save(Label label, vector<string> inst)
+	{
+		if (label != "")
+			if (!addLabel(label))
+			{
+				cout << "ERROR: DUPLICATE_LABEL\n";
+				isSaveSuccessful = false;
+				return this;
+			}
+
+		vector<string> params = constants.MAP_PARAMS;
+
+		map<string, string> kvparams;
+
+		int count = 0;
+		int instlen = inst.size();
+
+		for (auto i = inst.begin(); i != inst.end(); i++, count++)
+		{
+			if (instlen == 2 and count == 1)
+				count++;
+			kvparams.insert(pair<string, string>(params[count], *i));
+		}
+
+		addInst(kvparams);
+		
+		isSaveSuccessful = true;
+		return this;
 	}
 };
 

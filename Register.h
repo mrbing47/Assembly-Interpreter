@@ -10,7 +10,7 @@ class Register
 {
 public:
 
-	Bit8 A, B, C, D, E, H, L;
+	map<char,Bit8> reg;
 	Bit16 SP, PC = 0x0000;
 	Flag flags[8];
 };

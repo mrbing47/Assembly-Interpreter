@@ -109,16 +109,18 @@ bool strequal(string first, string second, bool caseSensitive = false)
 vector<string> strsplit(string str, string splitpt)
 {
 	vector<string> resStr;
-
+	string temp = "";
+	
 	int strlen = str.length();
 	int arrlen = splitpt.length();
-	string temp = "";
+
+
 	bool contains = false;
 
-	for (int i = 0; i < strlen; i++)
+	for (int i = 0; i <= strlen; i++)
 	{
 		contains = false;
-		for (int j = 0; j < arrlen; j++)
+		for (int j = 0; j <= arrlen; j++)
 		{
 			if (str[i] == splitpt[j])
 			{
@@ -136,11 +138,15 @@ vector<string> strsplit(string str, string splitpt)
 		}
 		else
 			temp += str[i];
-		
 	}
-
-	resStr.push_back(temp);
 
 	return resStr;
 }
 
+char toLower(const char ch)
+{
+	if (ch >= 65 and ch <= 90)
+		return ch + 32;
+	else
+		return ch;
+}

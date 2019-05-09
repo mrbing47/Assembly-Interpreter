@@ -119,6 +119,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="datatypes.h" />
+    <ClInclude Include="interfaces.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="Instructions.h" />
     <ClInclude Include="Register.h" />
