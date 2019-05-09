@@ -1,6 +1,6 @@
 #pragma once
 
-
+using namespace std;
 
 class _Bit8
 {
@@ -11,14 +11,14 @@ public:
 	_Bit8() : value(0) {}
 	_Bit8(int value) : value(value) {}
 	
-	void operator++()
+	void operator+=()
 	{
-		this->value++;
+		this->value+=1;
 	}
 
-	void operator--()
+	void operator-=()
 	{
-		this->value--;
+		this->value-=1;
 	}
 
 	_Bit8 operator+(const _Bit8 &bit8)
@@ -208,12 +208,12 @@ public:
 
 	void operator++()
 	{
-		this->value++;
+		++this->value;
 	}
 
 	void operator--()
 	{
-		this->value--;
+		--this->value;
 	}
 
 	bool operator== (_Bit16 bit16)

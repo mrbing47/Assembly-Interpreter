@@ -4,14 +4,13 @@
 
 #include"Register.h"
 #include "functions.h"
-#include "typedefs.h"
 #include "datatypes.h"
 
 using namespace std;
 
 class Instructions : public Register
 {
-
+	map<string, function<int(string, string)>> inst;
 
 public:
 	

@@ -1,4 +1,7 @@
 #pragma once
+
+#include"datatypes.h"
+
 class executeClass
 {
 public:
@@ -8,6 +11,6 @@ public:
 class saveClass 
 {
 public:
-	virtual executeClass* save(Label, vector<string>) = 0;
+	virtual executeClass* save(_Label, vector<string>) = 0;
 };
 

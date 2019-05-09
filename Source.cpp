@@ -4,16 +4,12 @@
 #include<conio.h>
 
 #include "Compiler.h"
-#include "Register.h"
 #include "functions.h"
-#include "Constants.h"
-#include "datatypes.h"
-
 using namespace std;
 
 int main() 
 {
-	
+	/*
 	string input = "";
 	
 
@@ -42,7 +38,8 @@ int main()
 		}
 		
 	} while (!isHLT);
-	
+	*/
+
 	cout << "\nPress ENTER to exit";
 	while (_getch() != 13);
 	return 0;

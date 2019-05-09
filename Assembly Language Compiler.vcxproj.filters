@@ -29,9 +29,6 @@
     <ClInclude Include="Compiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="typedefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -6,26 +6,26 @@
 
 #include"Instructions.h"
 #include"Register.h"
-#include "typedefs.h"
 #include "functions.h"
 #include "Constants.h"
 #include "interfaces.h"
+#include "datatypes.h"
 
 using namespace std;
 
 class Compiler : public Instructions, public executeClass, public saveClass
 {
 
-	map<Bit16, map<string,string>> inst;
-	map<Label, Bit16> label;
-	map<Bit16, Bit8> memory;
-	stack <pair<Regname, Bit8>> programStack;
+	map<_Bit16, map<string,string>> inst;
+	map<_Label, _Bit16> label;
+	map<_Bit16, _Bit8> memory;
+	stack <pair<char, _Bit8>> programStack;
 	bool subFlag = false;
 	bool isSaveSuccessful = false;
 
 	Constants constants;
 
-	bool addLabel(Label label)
+	bool addLabel(_Label label)
 	{
 		try {
 
@@ -34,14 +34,14 @@ class Compiler : public Instructions, public executeClass, public saveClass
 		}
 		catch (exception e)
 		{
-			this->label.insert(pair<Label, Bit16>(label, PC));
+			this->label.insert(pair<_Label, _Bit16>(label, PC));
 			return true;
 		}
 	}
 
 	void addInst(map<string, string> mapinst)
 	{
-		this->inst.insert(pair<Bit16, map<string, string>>(PC, mapinst));
+		this->inst.insert(pair<_Bit16, map<string, string>>(PC, mapinst));
 	}
 
 	Compiler(){}
@@ -57,14 +57,14 @@ public:
 			cout << i->first << '\t' << i->second << endl;
 		}
 		
-		PC++;
+		PC+=1;
 	}
 	
 	static saveClass* create() {
 		return new Compiler();
 	}
 
-	executeClass* save(Label label, vector<string> inst)
+	executeClass* save(_Label label, vector<string> inst)
 	{
 		if (label != "")
 			if (!addLabel(label))
