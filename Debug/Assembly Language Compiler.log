@@ -1,6 +1,2 @@
 ﻿  Source.cpp
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\datatypes.h(15): error C2805: binary 'operator +=' has too few parameters
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\datatypes.h(15): error C2333: '_Bit8::operator +=': error in function declaration; skipping function body
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\datatypes.h(20): error C2805: binary 'operator -=' has too few parameters
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\datatypes.h(20): error C2333: '_Bit8::operator -=': error in function declaration; skipping function body
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\compiler.h(60): error C2676: binary '+=': '_Bit16' does not define this operator or a conversion to a type acceptable to the predefined operator
+  Assembly Language Compiler.vcxproj -> C:\Users\Sarthik\Documents\Visual Studio 2017\Projects\Assembly Language Compiler\Debug\Assembly Language Compiler.exe

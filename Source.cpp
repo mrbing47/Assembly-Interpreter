@@ -5,10 +5,18 @@
 
 #include "Compiler.h"
 #include "functions.h"
+#include "datatypes.h"
 using namespace std;
 
 int main() 
 {
+	_Bit16 b1;
+	b1 = 2;
+	if (b1 < 3)
+		cout << "WOW";
+	if (3 == b1)
+		cout << "NICE";
+
 	/*
 	string input = "";
 	
