@@ -9,6 +9,7 @@
 #include "functions.h"
 #include "Constants.h"
 #include "interfaces.h"
+#include "Error.h"
 #include "datatypes.h"
 
 using namespace std;
@@ -24,6 +25,8 @@ class Compiler : public Instructions, public executeClass, public saveClass
 	bool isSaveSuccessful = false;
 
 	Constants constants;
+
+	_Label newLabel;
 
 	Instructions instructions;
 
@@ -46,20 +49,44 @@ class Compiler : public Instructions, public executeClass, public saveClass
 		this->inst.insert(pair<_Bit16, map<string, string>>(PC, mapinst));
 	}
 
+	void deleteInst()
+	{
+		if (newLabel != "")
+			label.erase(newLabel);
+
+		inst.erase(PC);
+	}
+
 	Compiler(){}
 
 public:
 	
 	void execute()
 	{
-		map<string, string> op = this->inst[PC];
+		if (isSaveSuccessful)
+		{
+			map<string, string> op = this->inst[PC];
 
-		string opcode = toLowerCase(op[constants.MAP_OPCODE]);
-		string dest = toLowerCase(op[constants.MAP_DEST]);
-		string src = toLowerCase(op[constants.MAP_SRC]);
+			string opcode = toLowerCase(op[constants.MAP_OPCODE]);
+			string dest = toLowerCase(op[constants.MAP_DEST]);
+			string src = toLowerCase(op[constants.MAP_SRC]);
 
-		instructions.funMap[opcode](dest, src);
-		PC+=1;
+			if (funMap.find(opcode) != funMap.end())
+			{
+				bool isExecuted = instructions.funMap[opcode](dest, src);
+				if (!isExecuted)
+				{
+					deleteInst();
+					return;
+				}
+				PC += 1;
+			}
+			else
+			{
+				deleteInst();
+				cout << INVALID_INST;
+			}
+		}
 	}
 	
 	static saveClass* create() {
@@ -71,10 +98,19 @@ public:
 		if (label != "")
 			if (!addLabel(label))
 			{
-				cout << "ERROR: DUPLICATE_LABEL\n";
+				cout << DUPLICATE_LABEL;
 				isSaveSuccessful = false;
 				return this;
 			}
+
+		if (inst.size() > 3)
+		{
+			cout << INVALID_INST;
+			isSaveSuccessful = false;
+			return this;
+		}
+
+		newLabel = label;
 
 		vector<string> params = constants.MAP_PARAMS;
 

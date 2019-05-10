@@ -49,17 +49,17 @@ int hexToDec(const string hexNum)
 	{
 		int n = (int)dupNum.back();
 		
-		if ((n >= 65 and n <= 70) or
-			(n >= 97 and n <= 102) or
-			(n >= 48 and n <= 57))
+		if ((n >= 65 && n <= 70) ||
+			(n >= 97 && n <= 102) ||
+			(n >= 48 && n <= 57))
 		{
 
-			if (n >= 65)
-				n -= 55;
+			if (n >= 97)
+				n -= 87;
 			else
 			{
-				if (n >= 97)
-					n -= 87;
+				if (n >= 65)
+					n -= 55;
 				else
 					n -= 48;
 			}
@@ -156,3 +156,18 @@ string toLowerCase(string str)
 	}
 	return resStr;
 }
+
+string toUpperCase(string str)
+{
+	string resStr = "";
+	int strLen = str.length();
+	for (int i = 0; i < strLen; i++)
+	{
+		if (str[i] >= 97 and str[i] <= 122)
+			resStr += (str[i] - 32);
+		else
+			resStr += str[i];
+	}
+	return resStr;
+}
+

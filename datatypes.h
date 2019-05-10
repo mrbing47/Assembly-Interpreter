@@ -9,8 +9,8 @@ class _Bit8
 public:
 
 	_Bit8() : value(0) {}
-	_Bit8(int value) : value(value) {}
-	_Bit8(const _Bit8 &bit8) : value(bit8.value) {}
+	_Bit8(int value) : value(value % 256) {}
+	_Bit8(const _Bit8 &bit8) : value(bit8.value % 256) {}
 
 	int toInt()
 	{
@@ -264,8 +264,8 @@ class _Bit16
 public:
 
 	_Bit16() : value(0) {}
-	_Bit16(int value) : value(value) {}
-	_Bit16(const _Bit16 &bit16) : value(bit16.value){}
+	_Bit16(int value) : value(value % 65536) {}
+	_Bit16(const _Bit16 &bit16) : value(bit16.value % 65536){}
 
 	int toInt()
 	{

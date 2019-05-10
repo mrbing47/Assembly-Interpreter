@@ -8,13 +8,23 @@
 #include "functions.h"
 #include "datatypes.h"
 #include "Instructions.h"
+#include "Error.h"
+#include "Instructions.h"
+
 using namespace std;
+
+int add(int a, int b)
+{
+	return a + b;
+};
 
 int main() 
 {
 	
 	string input = "";
 	
+	saveClass *compiler = Compiler::create();
+
 	bool isHLT = false;
 	do {
 
@@ -31,7 +41,7 @@ int main()
 			{
 				vector<string> inst = strsplit(input, ":");	
 
-				Compiler::create()
+				compiler
 					->save(inst.size() > 1 ? trim(inst[0]) : "",
 						strsplit(inst[inst.size() - 1], " ,"))
 					->execute();
