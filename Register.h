@@ -11,6 +11,11 @@ public:
 	_Bit16 SP, PC = 0x0000;
 	bool flags[8] = { false };
 
+	map<_Bit16, map<string, string>> inst;
+	map<_Label, _Bit16> labelMap;
+	map<_Bit16, _Bit8> memory;
+	stack <pair<char, _Bit8>> programStack;
+
 	Register()
 	{
 		reg["a"] = 0;
@@ -20,5 +25,6 @@ public:
 		reg["e"] = 0;
 		reg["h"] = 0;
 		reg["l"] = 0;
+		reg["m"] = 0;
 	}
 };

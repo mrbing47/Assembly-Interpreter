@@ -17,10 +17,6 @@ using namespace std;
 class Compiler : public Instructions, public executeClass, public saveClass
 {
 
-	map<_Bit16, map<string,string>> inst;
-	map<_Label, _Bit16> label;
-	map<_Bit16, _Bit8> memory;
-	stack <pair<char, _Bit8>> programStack;
 	bool subFlag = false;
 	bool isSaveSuccessful = false;
 
@@ -28,19 +24,17 @@ class Compiler : public Instructions, public executeClass, public saveClass
 
 	_Label newLabel;
 
-	Instructions instructions;
-
 	bool addLabel(_Label label)
 	{
-		try {
-
-			this->label.at(label);
-			return false;
-		}
-		catch (exception e)
+		if(labelMap.find(label) == labelMap.end())
 		{
-			this->label.insert(pair<_Label, _Bit16>(label, PC));
+			this->labelMap.insert(pair<_Label, _Bit16>(label, PC));
 			return true;
+		}
+		else
+		{
+			cout << DUPLICATE_LABEL;
+			return false;
 		}
 	}
 
@@ -52,7 +46,7 @@ class Compiler : public Instructions, public executeClass, public saveClass
 	void deleteInst()
 	{
 		if (newLabel != "")
-			label.erase(newLabel);
+			labelMap.erase(newLabel);
 
 		inst.erase(PC);
 	}
@@ -67,13 +61,15 @@ public:
 		{
 			map<string, string> op = this->inst[PC];
 
-			string opcode = toLowerCase(op[constants.MAP_OPCODE]);
-			string dest = toLowerCase(op[constants.MAP_DEST]);
-			string src = toLowerCase(op[constants.MAP_SRC]);
+			string opcode = op[constants.MAP_OPCODE];
 
 			if (funMap.find(opcode) != funMap.end())
 			{
-				bool isExecuted = instructions.funMap[opcode](dest, src);
+				bool isExecuted = funMap[opcode](
+						op[constants.MAP_DEST]
+						, op[constants.MAP_SRC]
+						);
+
 				if (!isExecuted)
 				{
 					deleteInst();

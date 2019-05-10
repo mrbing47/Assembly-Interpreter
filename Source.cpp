@@ -30,7 +30,7 @@ int main()
 
 		getline(cin,input);
 		
-		input = trim(input);
+		input = toLowerCase(trim(input));
 
 		if (!input.empty())
 		{

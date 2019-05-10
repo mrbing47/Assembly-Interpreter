@@ -6,16 +6,56 @@
 #include"Register.h"
 #include "functions.h"
 #include "Error.h"
+#include "Compiler.h"
 #include "datatypes.h"
 
 using namespace std;
 using namespace std::placeholders;
 
 
-typedef map<string, function<bool(string, string)>> map_str_to_fun;
-
 class Instructions : public Register, public Error
 {
+
+	int mValue(_Bit8 reg_H, _Bit8 reg_L)
+	{
+		return (reg_H.toInt() << 8) + reg_L.toInt();
+	}
+	
+	bool checkParams(string dest, string src, int n)
+	{
+		if (n == 0)
+		{
+			if (src != "")
+			{
+				cout << INVALID_PARAMS_MORE;
+				return false;
+			}
+		}
+		if (n == 1)
+		{
+			if (dest != "")
+			{
+				cout << INVALID_PARAMS_MORE;
+				return false;
+			}
+			if (src == "")
+			{
+				cout << INVALID_PARAMS_FEW;
+				return false;
+			}
+
+		}
+		if (n == 2)
+		{
+			if (dest == "")
+			{
+				cout << INVALID_PARAMS_FEW;
+				return false;
+			}
+		}
+		return true;
+	}
+
 	bool checkHex(int dec, int bit)
 	{
 		if (dec == -1)
@@ -26,22 +66,41 @@ class Instructions : public Register, public Error
 		int max = 1 << bit;
 		if (dec > max - 1)
 		{
-			cout << INVALID_HEX_8;
+			if (bit == 8)
+				cout << INVALID_HEX_8;
+			if (bit == 16)
+				cout << INVALID_HEX_16;
 			return false;
 		}
 		return true;
 	}
 	
+	bool htd(string dest, string src)
+	{
+		if(!checkParams(dest,src,1))
+			return false;
+		
+		int dec = hexToDec(src);
+
+		if (checkHex(dec, 16))
+			cout << dec << endl;
+
+		return false;
+	}
+
 	bool shw8(string dest, string src)
 	{
-		if (dest != "")
-		{
-			cout << INVALID_PARAMS_MORE;
+		if (!checkParams(dest, src, 1))
 			return false;
-		}
+
 		if(reg.find(src) != reg.end())
 		{
-			cout << toUpperCase(src) << '=' << reg[src] << endl;
+			int value = reg[src].toInt();
+			
+			if (src == "m")
+				value = mValue(reg["h"], reg["l"]);
+
+			cout << toUpperCase(src) << '=' << value << endl;
 			return true;
 		}
 		else
@@ -53,17 +112,16 @@ class Instructions : public Register, public Error
 
 	bool mvi(string dest, string src)
 	{
-		if (dest == "")
-		{
-			cout << INVALID_PARAMS_FEW;
+		if (!checkParams(dest, src, 2))
 			return false;
-		}
 	
 		if (reg.find(dest) != reg.end())
 		{
 			int dec = hexToDec(src);
 			if (checkHex(dec, 8))
+			{
 				reg[dest] = dec;
+			}
 			else
 				return false;
 		}
@@ -78,11 +136,9 @@ class Instructions : public Register, public Error
 
 	bool add(string dest, string src)
 	{
-		if (dest != "")
-		{
-			cout << INVALID_PARAMS_MORE;
-			return true;
-		}
+		if (!checkParams(dest, src, 1))
+			return false;
+
 		try {
 			reg["a"] += reg.at(src);
 			return true;
@@ -94,26 +150,22 @@ class Instructions : public Register, public Error
 		}
 	}
 
-	bool inx(string dest, string src)
+	bool inr(string dest, string src)
 	{
-		if (dest != "" || src != "")
-		{
-			cout << INVALID_PARAMS_MORE;
+		if (!checkParams(dest, src, 1))
 			return false;
-		}
-		
-		reg["a"] += 1;
+		if (reg.find(src) != reg.end())
+			reg[src] += 1;
+		else
+			return false;
 
 		return true;
 	}
 
 	bool adi(string dest, string src)
 	{
-		if (dest != "")
-		{
-			cout << INVALID_PARAMS_MORE;
+		if (!checkParams(dest, src, 1))
 			return false;
-		}
 
 		int dec = hexToDec(src);
 
@@ -123,22 +175,42 @@ class Instructions : public Register, public Error
 			return false;
 
 		return true;
+	}
 
+	bool shl(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		for (auto i = labelMap.begin(); i != labelMap.end(); i++)
+			cout << i->first << '\t' << i->second << endl;
+		
+
+		return true;
+	}
+
+	bool mov(string dest, string src)
+	{
+		if (!checkParams(dest, src, 2))
+			return false;
+		
+		return true;
 	}
 
 public:
-	map_str_to_fun funMap;
+
+	map<string,function<bool(string,string)>> funMap;
 
 	Instructions()
 	{
+		this->funMap["shw8"] = bind(&Instructions::shw8, this, _1, _2);
+		this->funMap["shl"] = bind(&Instructions::shl, this, _1, _2);
+		this->funMap["htd"] = bind(&Instructions::htd, this, _1, _2);
+
 		this->funMap["add"] = bind(&Instructions::add, this, _1, _2);
 		this->funMap["adi"] = bind(&Instructions::adi, this, _1, _2);
-		this->funMap["shw8"] = bind(&Instructions::shw8, this, _1, _2);
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
-		this->funMap["inx"] = bind(&Instructions::inx, this, _1, _2);
+		this->funMap["inr"] = bind(&Instructions::inr, this, _1, _2);
 	}
 
-	
-
-	
 };

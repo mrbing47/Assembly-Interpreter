@@ -9,6 +9,7 @@ public:
 	const string INVALID_PARAMS_FEW = "\nERROR: INVALID PARAMETER, few number of arguments\n\n";
 	const string INVALID_HEX = "\nINVALID_HEX\n\n";
 	const string INVALID_HEX_8 = "\nINVALID_HEX_8_BIT_NUMBER\n\n";
+	const string INVALID_HEX_16 = "\nINVALID_HEX_16_BIT_NUMBER\n\n";
 	const string INVALID_INST = "\nERROR: INVALID_INSTRUCTION\n\n";
 };
 
