@@ -520,6 +520,7 @@ public:
 	_Label() : str("") {}
 	_Label(const char *str) : str(str) {}
 	_Label(const _Label &label) : str(label.str) {}
+	_Label(const string str) : str(str){}
 
 	string toString()
 	{

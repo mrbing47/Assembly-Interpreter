@@ -143,10 +143,16 @@ vector<string> strsplit(string str, string splitpt)
 	return resStr;
 }
 
-char toLower(const char ch)
+string toLowerCase(string str)
 {
-	if (ch >= 65 and ch <= 90)
-		return ch + 32;
-	else
-		return ch;
+	string resStr = "";
+	int strLen = str.length();
+	for (int i = 0; i < strLen; i++)
+	{
+		if (str[i] >= 65 and str[i] <= 90)
+			resStr += (str[i] + 32);
+		else
+			resStr += str[i];
+	}
+	return resStr;
 }

@@ -25,6 +25,8 @@ class Compiler : public Instructions, public executeClass, public saveClass
 
 	Constants constants;
 
+	Instructions instructions;
+
 	bool addLabel(_Label label)
 	{
 		try {
@@ -52,11 +54,11 @@ public:
 	{
 		map<string, string> op = this->inst[PC];
 
-		for (auto i = op.begin(); i != op.end(); i++)
-		{
-			cout << i->first << '\t' << i->second << endl;
-		}
-		
+		string opcode = toLowerCase(op[constants.MAP_OPCODE]);
+		string dest = toLowerCase(op[constants.MAP_DEST]);
+		string src = toLowerCase(op[constants.MAP_SRC]);
+
+		instructions.funMap[opcode](dest, src);
 		PC+=1;
 	}
 	

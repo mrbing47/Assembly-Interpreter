@@ -1,6 +1,2 @@
 ﻿  Source.cpp
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\instructions.h(27): error C2679: binary '=': no operator found which takes a right-hand operand of type 'void (__thiscall Instructions::* )(std::string,std::string)' (or there is no acceptable conversion)
-  d:\software\visual studio\vc\tools\msvc\14.16.27023\include\functional(1577): note: could be 'std::function<void (std::string,std::string)> &std::function<void (std::string,std::string)>::operator =(std::nullptr_t) noexcept'
-  d:\software\visual studio\vc\tools\msvc\14.16.27023\include\functional(1550): note: or       'std::function<void (std::string,std::string)> &std::function<void (std::string,std::string)>::operator =(std::function<void (std::string,std::string)> &&)'
-  d:\software\visual studio\vc\tools\msvc\14.16.27023\include\functional(1531): note: or       'std::function<void (std::string,std::string)> &std::function<void (std::string,std::string)>::operator =(const std::function<void (std::string,std::string)> &)'
-  c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\instructions.h(27): note: while trying to match the argument list '(std::function<void (std::string,std::string)>, void (__thiscall Instructions::* )(std::string,std::string))'
+  Assembly Language Compiler.vcxproj -> C:\Users\Sarthik\Documents\Visual Studio 2017\Projects\Assembly Language Compiler\Debug\Assembly Language Compiler.exe
