@@ -35,22 +35,20 @@ int main()
 		if (!input.empty())
 		{
 
-			if (strequal(input, "HLT"))
-				isHLT = true;
-			else
-			{
-				vector<string> inst = strsplit(input, ":");	
+			vector<string> inst = strsplit(input, ":");
 
-				compiler
-					->save(inst.size() > 1 ? trim(inst[0]) : "",
-						strsplit(inst[inst.size() - 1], " ,"))
-					->execute();
-			}
+			compiler
+				->save(inst.size() > 1 ? trim(inst[0]) : "",
+					strsplit(inst[inst.size() - 1], " ,"))
+				->execute();
+
+			if (input == "hlt")
+				isHLT = true;
+
 		}
 		
 	} while (!isHLT);
 	
-	cout << "\nPress ENTER to exit";
 	while (_getch() != 13);
 	return 0;
 

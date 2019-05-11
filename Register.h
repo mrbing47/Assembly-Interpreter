@@ -8,7 +8,8 @@ class Register
 {
 public:
 	map<string, _Bit8> reg;
-	_Bit16 SP, PC = 0x0000;
+	map<string, _Bit16> reg16;
+
 	bool flags[8] = { false };
 
 	map<_Bit16, map<string, string>> inst;
@@ -26,5 +27,8 @@ public:
 		reg["h"] = 0;
 		reg["l"] = 0;
 		reg["m"] = 0;
+
+		reg16["pc"] = 0;
+		reg16["sp"] = 0;
 	}
 };

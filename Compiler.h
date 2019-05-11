@@ -28,7 +28,7 @@ class Compiler : public Instructions, public executeClass, public saveClass
 	{
 		if(labelMap.find(label) == labelMap.end())
 		{
-			this->labelMap.insert(pair<_Label, _Bit16>(label, PC));
+			this->labelMap.insert(pair<_Label, _Bit16>(label, reg16["pc"]));
 			return true;
 		}
 		else
@@ -40,7 +40,7 @@ class Compiler : public Instructions, public executeClass, public saveClass
 
 	void addInst(map<string, string> mapinst)
 	{
-		this->inst.insert(pair<_Bit16, map<string, string>>(PC, mapinst));
+		this->inst.insert(pair<_Bit16, map<string, string>>(reg16["pc"], mapinst));
 	}
 
 	void deleteInst()
@@ -48,7 +48,7 @@ class Compiler : public Instructions, public executeClass, public saveClass
 		if (newLabel != "")
 			labelMap.erase(newLabel);
 
-		inst.erase(PC);
+		inst.erase(reg16["pc"]);
 	}
 
 	Compiler(){}
@@ -59,7 +59,7 @@ public:
 	{
 		if (isSaveSuccessful)
 		{
-			map<string, string> op = this->inst[PC];
+			map<string, string> op = this->inst[reg16["pc"]];
 
 			string opcode = op[constants.MAP_OPCODE];
 
@@ -75,7 +75,7 @@ public:
 					deleteInst();
 					return;
 				}
-				PC += 1;
+				reg16["pc"] += 1;
 			}
 			else
 			{
