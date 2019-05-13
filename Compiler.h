@@ -24,9 +24,9 @@ class Compiler : public Instructions, public executeClass, public saveClass
 
 	_Label newLabel;
 
-	bool addLabel(_Label label)
+	bool addLabel(const _Label label)
 	{
-		if(labelMap.find(label) == labelMap.end())
+		if (labelMap.find(label) == labelMap.end())
 		{
 			this->labelMap.insert(pair<_Label, _Bit16>(label, reg16["pc"]));
 			return true;
@@ -51,7 +51,7 @@ class Compiler : public Instructions, public executeClass, public saveClass
 		inst.erase(reg16["pc"]);
 	}
 
-	Compiler(){}
+	Compiler(){};
 
 public:
 	

@@ -1,8 +1,7 @@
 #pragma once
 
 /*
-	Check out https://www.daenotes.com/electronics/digital-electronics/instruction-set-intel-8085
-	for the reference for these instructions
+	For reference check out https://www.daenotes.com/electronics/digital-electronics/instruction-set-intel-8085
 */
 
 #include<functional>
@@ -27,25 +26,21 @@ class Instructions : public Register, public Error, public Constants
 		They help to minimise the code as much as possible
 	*/
 
-	int mValueOut()
-	{
-		return (reg["h"].toInt() << 8) + reg["l"].toInt();
-	}
+	int mValueOut() { return (reg["h"].toInt() << 8) + reg["l"].toInt(); }
 
 	void mValueIn(string value)
 	{
-
 	}
 
 	bool checkReg(string dest, string src)
 	{
-		if (dest == "")
+		if (dest.empty())
 		{
 			if (reg.count(src))
 				return true;
 			else
 			{
-				cout << INVALID_REG;
+				cout << INVALID_REG << "here";
 				return false;
 			}
 		}
@@ -61,29 +56,21 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	bool checkmAddr(function<bool()> const &lamda, string reg)
+	bool checkmAddr(function<bool()> const& lamda, string reg)
 	{
 		if (memory.count(mValueOut()) || reg == "d")
 		{
-			if (mValueOut() >= 4095)
-			{
-				return lamda();
-			}
-			else
-			{
-				cout << MEMORY_ACCESS_DENIED;
-				return false;
-			}
-		}
-		else
-		{
-			cout << INVALID_MEMORY_ACCESS;
+			if (mValueOut() > 4095) { return lamda(); }
+
+			cout << MEMORY_ACCESS_DENIED;
 			return false;
 		}
 
+		cout << INVALID_MEMORY_ACCESS;
+		return false;
 	}
 
-	bool checkParams(string dest, string src, int n)
+	bool checkParams(string dest, string src, int n) const
 	{
 		if (n == 0)
 		{
@@ -105,7 +92,6 @@ class Instructions : public Register, public Error, public Constants
 				cout << INVALID_PARAMS_FEW;
 				return false;
 			}
-
 		}
 		if (n == 2)
 		{
@@ -118,7 +104,7 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
-	bool checkHex(int dec, int bit)
+	bool checkHex(int dec, int bit) const
 	{
 		if (dec == -1)
 		{
@@ -138,11 +124,11 @@ class Instructions : public Register, public Error, public Constants
 	}
 
 	/*
-		These are the Custom Intsructions to help the programmer
+		These are the Custom Instructions to help the programmer
 		look into the value of memory, register, and Label map
 	*/
 
-	bool help(string dest, string src)
+	bool hlp(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
 			return false;
@@ -191,8 +177,8 @@ class Instructions : public Register, public Error, public Constants
 				return false;
 		}
 		return true;
-
 	}
+
 	bool shl(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -261,7 +247,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 2))
 			return false;
 
-		if (checkReg(dest, ""))
+		if (checkReg("",dest))
 		{
 			int dec = hexToDec(src);
 			if (checkHex(dec, 8))
@@ -272,8 +258,7 @@ class Instructions : public Register, public Error, public Constants
 					{
 						memory[mValueOut()] = dec;
 						return true;
-					}
-					, "d");
+					}, "d");
 				}
 				reg[dest] = dec;
 			}
@@ -284,7 +269,6 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 
 		return true;
-
 	}
 
 	/*
@@ -298,7 +282,8 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 1))
 			return false;
 
-		try {
+		try
+		{
 			reg["a"] += reg.at(src);
 			return true;
 		}
@@ -331,13 +316,134 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.find(src) != reg.end())
 			reg[src] += 1;
 		else
+		{
+			cout << INVALID_REG;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool ana(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (reg.count(src))
+		{
+			if (src == "m")
+				return checkmAddr([this, src]() -> bool
+				{
+					reg["a"] &= memory[mValueOut()];
+					return true;
+				}, "s");
+
+			reg["a"] &= reg[src];
+		}
+		else
+		{
+			cout << INVALID_REG;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool ani(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (checkHex(dec, 8))
+			reg["a"] &= dec;
+		else
 			return false;
 
 		return true;
 	}
 
+	bool ora(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
 
-	
+		if (reg.count(src))
+		{
+			if (src == "m")
+				return checkmAddr([this, src]() -> bool
+				{
+					reg["a"] |= memory[mValueOut()];
+					return true;
+				}, "s");
+
+			reg["a"] |= reg[src];
+		}
+		else
+		{
+			cout << INVALID_REG;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool ori(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (checkHex(dec, 8))
+			reg["a"] |= dec;
+		else
+			return false;
+
+		return true;
+	}
+
+	bool xra(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (reg.count(src))
+		{
+			if (src == "m")
+				return checkmAddr([this, src]() -> bool
+				{
+					reg["a"] ^= memory[mValueOut()];
+					return true;
+				}, "s");
+
+			reg["a"] ^= reg[src].toInt();
+		}
+		else
+		{
+			cout << INVALID_REG;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool xri(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (checkHex(dec, 8))
+			reg["a"] ^= dec;
+		else
+			return false;
+
+		return true;
+	}
+
 	bool hlt(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -359,7 +465,7 @@ public:
 		this->funMap["shm"] = bind(&Instructions::shm, this, _1, _2);
 		this->funMap["shl"] = bind(&Instructions::shl, this, _1, _2);
 		this->funMap["htd"] = bind(&Instructions::htd, this, _1, _2);
-		this->funMap["help"] = bind(&Instructions::help, this, _1, _2);
+		this->funMap["hlp"] = bind(&Instructions::hlp, this, _1, _2);
 		
 		//Data Transfer Instructions
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
@@ -371,13 +477,16 @@ public:
 		this->funMap["inr"] = bind(&Instructions::inr, this, _1, _2);
 
 		//Logical Instructions
+		this->funMap["ana"] = bind(&Instructions::ana, this, _1, _2);
+		this->funMap["ani"] = bind(&Instructions::ani, this, _1, _2);
+		this->funMap["ora"] = bind(&Instructions::ora, this, _1, _2);
+		this->funMap["ori"] = bind(&Instructions::ori, this, _1, _2);
+		this->funMap["xra"] = bind(&Instructions::xra, this, _1, _2);
+		this->funMap["xri"] = bind(&Instructions::xri, this, _1, _2);
 
 		//Branch Control Instructions
 
 		//I/O and Machine Control Instructions
 		this->funMap["hlt"] = bind(&Instructions::hlt, this, _1, _2);
-
 	}
-
-
 };
