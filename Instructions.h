@@ -211,7 +211,7 @@ class Instructions : public Register, public Error, public Constants
 		for (auto i = funMap.begin(); i != funMap.end(); i++)
 			cout << i->first << endl;
 
-		cout << endl;
+		cout <<"\nTotal commands: " << funMap.size() << "\n\n";
 		return false;
 	}
 
@@ -1125,7 +1125,8 @@ public:
 		this->funMap["aci"] = bind(&Instructions::aci, this, _1, _2);
 		this->funMap["sub"] = bind(&Instructions::sub, this, _1, _2);
 		this->funMap["sui"] = bind(&Instructions::sui, this, _1, _2);
-		this->funMap["sbb"] = bind(&Instructions::sub, this, _1, _2);
+		this->funMap["sbb"] = bind(&Instructions::sbb, this, _1, _2);
+		this->funMap["sbi"] = bind(&Instructions::sbi, this, _1, _2);
 		this->funMap["inr"] = bind(&Instructions::inr, this, _1, _2);
 		this->funMap["dcr"] = bind(&Instructions::dcr, this, _1, _2);
 		this->funMap["inx"] = bind(&Instructions::inx, this, _1, _2);
