@@ -2,6 +2,20 @@
 
 using namespace std;
 
+bool cal_parity(int value)
+{
+	bool isEven = true;
+
+	while (value != 0)
+	{
+		if (value & 1)
+			isEven = !isEven;
+
+		value >>= 1;
+	}
+	return isEven;
+}
+
 string trim(const string inst)
 {
 	string str = "";

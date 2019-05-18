@@ -26,7 +26,7 @@ class Instructions : public Register, public Error, public Constants
 		They help to minimise the code as much as possible
 	*/
 
-	void alter_flags(_Bit8 num1, _Bit8 num2,int res_value, string type_op)
+	void alter_flags(_Bit8 num1, _Bit8 num2, int res_value, string type_op)
 	{
 		if (type_op == ADDITION)
 		{
@@ -36,12 +36,14 @@ class Instructions : public Register, public Error, public Constants
 
 			flags[CARRY_BIT] = res_value > 255 ? true : false;
 		}
-		if(type_op == SUBTRACTION)
-		{
-			flags[CARRY_BIT] = num1 < num2 ? true : false;
-		}
+		if (type_op == SUBTRACTION) { flags[CARRY_BIT] = num1 < num2 ? true : false; }
 
 		flags[ZERO_BIT] = res_value % 256 == 0 ? true : false;
+
+		if (res_value < 0)
+			res_value += 256;
+
+		flags[PARITY_BIT] = cal_parity(res_value);
 	}
 
 	int rpValueOut(string rp)
@@ -282,8 +284,8 @@ class Instructions : public Register, public Error, public Constants
 	{
 		for (int i = 7; i >= 0; i--)
 		{
-			if(i == 7)
-				cout<<"SIGN_BIT=";
+			if (i == 7)
+				cout << "SIGN_BIT=";
 			if (i == 6)
 				cout << "ZERO_BIT=";
 			if (i == 4)
@@ -529,16 +531,13 @@ class Instructions : public Register, public Error, public Constants
 			int reg_value;
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
-				{
-					reg_value = memory[rpValueOut("m")].toInt();
-				}
+				if (checkAddr({ rpValueOut("m") }, "s")) { reg_value = memory[rpValueOut("m")].toInt(); }
 				else { return false; }
 			}
 			else
 				reg_value = reg[src].toInt();
 
-			alter_flags(reg["a"], reg_value,reg_value + reg["a"].toInt(),ADDITION);
+			alter_flags(reg["a"], reg_value, reg_value + reg["a"].toInt(), ADDITION);
 
 			reg["a"] += reg_value;
 			return true;
@@ -572,7 +571,7 @@ class Instructions : public Register, public Error, public Constants
 
 			res_value = reg["a"].toInt() + reg_value;
 
-			alter_flags(reg["a"], reg_value, res_value,ADDITION);
+			alter_flags(reg["a"], reg_value, res_value, ADDITION);
 
 			reg["a"] = res_value + (int)flags[CARRY_BIT];
 
@@ -623,7 +622,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkHex(dec, 8))
 		{
-			alter_flags(reg["a"], dec, reg["a"].toInt() + dec,ADDITION);
+			alter_flags(reg["a"], dec, reg["a"].toInt() + dec, ADDITION);
 			reg["a"] += dec;
 		}
 		else
@@ -714,7 +713,7 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 		if (checkReg(dest, src, 8))
 		{
-			alter_flags(reg[src], 1, reg[src].toInt() + 1,ADDITION);
+			alter_flags(reg[src], 1, reg[src].toInt() + 1, ADDITION);
 			reg[src] += 1;
 		}
 		else
@@ -722,6 +721,7 @@ class Instructions : public Register, public Error, public Constants
 
 		return true;
 	}
+
 	bool dcr(string dest, string src)
 	{
 		if (!checkParams(dest, src, 1))
@@ -871,6 +871,46 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	bool cmp(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkReg(dest, src, 8))
+			return false;
+
+		int reg_value;
+
+		if (src == "m")
+		{
+			if (!checkAddr({ rpValueOut("m") }, "s"))
+				return false;
+
+			reg_value = memory[rpValueOut("m")].toInt();
+		}
+		else
+			reg_value = reg[src].toInt();
+			
+		alter_flags(reg["a"], reg_value, reg["a"].toInt() - reg_value, SUBTRACTION);
+
+		return true;
+	}
+
+	bool cpi(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (!checkHex(dec, 8))
+			return false;
+
+		alter_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
+
+		return true;
+	}
+
 	bool cma(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -891,7 +931,7 @@ class Instructions : public Register, public Error, public Constants
 
 	bool stc(string dest, string src)
 	{
-		if(!checkParams(dest,src,0))
+		if (!checkParams(dest, src, 0))
 			return false;
 
 		flags[CARRY_BIT] = true;
@@ -900,7 +940,7 @@ class Instructions : public Register, public Error, public Constants
 
 	bool rlc(string dest, string src)
 	{
-		if(!checkParams(dest,src,0))
+		if (!checkParams(dest, src, 0))
 			return false;
 
 		flags[CARRY_BIT] = (bool)((reg["a"].toInt() >> 7) & 1);
@@ -919,6 +959,34 @@ class Instructions : public Register, public Error, public Constants
 		reg["a"] |= flags[CARRY_BIT] << 7;
 		return true;
 	}
+
+	bool ral(string dest, string src)
+	{
+		if(!checkParams(dest,src,0))
+			return false;
+
+		bool temp = (bool)(reg["a"].toInt() >> 7) & 1;
+		reg["a"] = reg["a"].toInt() << 1;
+		reg["a"] |= flags[CARRY_BIT];
+		flags[CARRY_BIT] = temp;
+
+		return true;
+	}
+
+	bool rar(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		bool temp = (bool)reg["a"].toInt() & 1;
+		reg["a"] = reg["a"].toInt() >> 1;
+		reg["a"] |= flags[CARRY_BIT] << 7;
+		flags[CARRY_BIT] = temp;
+
+		return true;
+	}
+
+
 	/*
 	 *	These are the I/O and Machine Control Group of Instructions
 	 *	which are used for input/output ports, stack and machine control.
@@ -977,8 +1045,12 @@ public:
 		this->funMap["cma"] = bind(&Instructions::cma, this, _1, _2);
 		this->funMap["stc"] = bind(&Instructions::stc, this, _1, _2);
 		this->funMap["cmc"] = bind(&Instructions::cmc, this, _1, _2);
+		this->funMap["cmp"] = bind(&Instructions::cmp, this, _1, _2);
+		this->funMap["cpi"] = bind(&Instructions::cpi, this, _1, _2);
 		this->funMap["rlc"] = bind(&Instructions::rlc, this, _1, _2);
 		this->funMap["rrc"] = bind(&Instructions::rrc, this, _1, _2);
+		this->funMap["ral"] = bind(&Instructions::ral, this, _1, _2);
+		this->funMap["rar"] = bind(&Instructions::rar, this, _1, _2);
 
 		//Branch Control Instructions
 
