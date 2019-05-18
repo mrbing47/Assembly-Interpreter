@@ -10,6 +10,8 @@ public:
 	const string MAP_OPCODE = "opcode";
 	const string MAP_SRC = "src";
 	const string MAP_DEST = "dest";
+	const string ADDITION = "addition";
+	const string SUBTRACTION = "subtraction";
 	
 	const vector<string> MAP_PARAMS{ MAP_OPCODE,MAP_DEST,MAP_SRC };
 	

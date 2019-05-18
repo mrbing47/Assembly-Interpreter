@@ -2,14 +2,6 @@
 
 using namespace std;
 
-int max(int num_1, int num_2)
-{
-	if (num_1 > num_2)
-		return num_1;
-	else
-		return num_2;
-}
-
 string trim(const string inst)
 {
 	string str = "";

@@ -5,6 +5,14 @@ using namespace std;
 class _Bit8
 {
 	int value;
+	int modify(int value)
+	{
+		if (value >= 0)
+			return (value % 256);
+		
+		else
+			return value + 256;
+	}
 
 public:
 
@@ -14,7 +22,7 @@ public:
 	}
 
 	_Bit8(int value)
-		: value(value % 256)
+		: value(modify(value))
 	{
 	}
 
