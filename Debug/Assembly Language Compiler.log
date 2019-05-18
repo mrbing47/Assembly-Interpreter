@@ -1,2 +1,3 @@
 ﻿  Source.cpp
+c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\instructions.h(37): warning C4715: 'Instructions::rpValueOut': not all control paths return a value
   Assembly Language Compiler.vcxproj -> C:\Users\Sarthik\Documents\Visual Studio 2017\Projects\Assembly Language Compiler\Debug\Assembly Language Compiler.exe

@@ -34,9 +34,6 @@ class Instructions : public Register, public Error, public Constants
 			return (reg["d"].toInt() << 8) + reg["e"].toInt();
 		if (rp == "m")
 			return (reg["h"].toInt() << 8) + reg["l"].toInt();
-
-		cout << INVALID_REG_PAIR;
-		return -1;
 	}
 
 	bool rpValueIn(string rp, int value)
@@ -64,6 +61,17 @@ class Instructions : public Register, public Error, public Constants
 		return false;
 	}
 
+	bool checkRP(string rp)
+	{
+		if(rp == "b" || rp == "d" || rp == "h")
+			return true;
+		else
+		{
+			cout << INVALID_REG_PAIR;
+			return false;
+		}
+	}
+
 	bool checkReg(string dest, string src, int bit)
 	{
 		if (dest.empty())
@@ -89,11 +97,22 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	bool checkAddr(function<bool()> const& lamda, _Bit16 bit16, string reg)
+	bool checkAddr(function<bool()> const& lamda, vector<_Bit16> vec_bit16, string type_addr)
 	{
-		if (memory.count(bit16) || reg == "d")
+		bool isFound = true;
+
+		for (auto i = vec_bit16.begin(); i != vec_bit16.end(); i++)
+			if (!memory.count(*i))
+			{
+				isFound = false;
+				break;
+			}
+			
+		
+		
+		if ((isFound || type_addr == "d") and memory.size() <= 2)
 		{
-			if (bit16 > 4095) { return lamda(); }
+			if (vec_bit16[0] > 4095) { return lamda(); }
 
 			cout << MEMORY_ACCESS_DENIED;
 			return false;
@@ -259,7 +278,7 @@ class Instructions : public Register, public Error, public Constants
 				{
 					reg[dest] = memory[rpValueOut("m")];
 					return true;
-				}, rpValueOut("m"), "s");
+				}, { rpValueOut("m") }, "s");
 			}
 			if (dest == "m")
 			{
@@ -267,7 +286,7 @@ class Instructions : public Register, public Error, public Constants
 				{
 					memory[rpValueOut("m")] = reg[src];
 					return true;
-				}, rpValueOut("m"), "d");
+				}, { rpValueOut("m") }, "d");
 			}
 			reg[dest] = reg[src];
 		}
@@ -294,7 +313,7 @@ class Instructions : public Register, public Error, public Constants
 					{
 						memory[rpValueOut("m")] = dec;
 						return true;
-					}, rpValueOut("m"), "d");
+					}, { rpValueOut("m") }, "d");
 				}
 				reg[dest] = dec;
 			}
@@ -322,7 +341,7 @@ class Instructions : public Register, public Error, public Constants
 			reg["a"] = memory[dec];
 			return true;
 
-		}, dec, "s");
+		}, { dec }, "s");
 
 		
 	}
@@ -342,7 +361,7 @@ class Instructions : public Register, public Error, public Constants
 			memory[dec] = reg["a"];
 			return true;
 
-		}, dec, "d");
+		}, { dec }, "d");
 
 
 	}
@@ -364,6 +383,98 @@ class Instructions : public Register, public Error, public Constants
 		return false;
 	}
 
+	bool lhld(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (!checkHex(dec, 16))
+			return false;
+
+		return checkAddr([this, dec]()->bool
+		{
+			reg["l"] = memory[dec];
+			reg["h"] = memory[dec + 1];
+			return true;
+
+		}, {dec, dec + 1}, "s");
+
+	}
+
+	bool shld(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (!checkHex(dec, 16))
+			return false;
+
+		return checkAddr([this, dec]()->bool
+		{
+			memory[dec] = reg["l"];
+			memory[dec + 1] = reg["h"] ;
+			return true;
+
+		}, {dec}, "d");
+
+	}
+
+	bool ldax(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (checkRP(src))
+		{
+			return checkAddr([this, src]()->bool
+			{
+				reg["a"] = memory[rpValueOut(src)];
+				return true;
+			}, { rpValueOut(src) }, "d");
+		}
+		else { return false; }
+
+	}
+
+	bool stax(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if(checkRP(src))
+		{
+			return checkAddr([this,src]()->bool
+			{
+				memory[rpValueOut(src)] = reg["a"];
+				return true;
+			}, {rpValueOut(src)}, "d");
+		}
+		else { return false; }
+		
+	}
+
+	bool xchg(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		_Bit8 tempH = reg["h"];
+		_Bit8 tempL = reg["l"];
+
+		reg["h"] = reg["d"];
+		reg["l"] = reg["e"];
+
+		reg["d"] = tempH;
+		reg["e"] = tempL;
+
+		return true;
+	}
+
+
 	/*
 		These are the  Arithmetic Group of Instructions
 		which manipulate the data in the registers 
@@ -384,7 +495,7 @@ class Instructions : public Register, public Error, public Constants
 					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
 
 					return true;
-				}, rpValueOut("m"), "s");
+			}, { rpValueOut("m") }, "s");
 
 			reg["a"] += reg.at(src);
 			return true;
@@ -428,7 +539,7 @@ class Instructions : public Register, public Error, public Constants
 					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
 
 					return true;
-				}, rpValueOut("m"), "s");
+			}, { rpValueOut("m") }, "s");
 
 			reg["a"] -= reg.at(src);
 			return true;
@@ -473,6 +584,11 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	/*
+	 *	These are the Logical Group of Instructions
+	 *	which manipulate the data using Bitwise operators
+	 */
+
 	bool ana(string dest, string src)
 	{
 		if (!checkParams(dest, src, 1))
@@ -485,7 +601,7 @@ class Instructions : public Register, public Error, public Constants
 				{
 					reg["a"] &= memory[rpValueOut("m")];
 					return true;
-				}, rpValueOut("m"), "s");
+			}, { rpValueOut("m") }, "s");
 
 			reg["a"] &= reg[src];
 		}
@@ -525,7 +641,7 @@ class Instructions : public Register, public Error, public Constants
 				{
 					reg["a"] |= memory[rpValueOut("m")];
 					return true;
-				}, rpValueOut("m"), "s");
+			}, { rpValueOut("m") }, "s");
 
 			reg["a"] |= reg[src];
 		}
@@ -565,7 +681,7 @@ class Instructions : public Register, public Error, public Constants
 				{
 					reg["a"] ^= memory[rpValueOut("m")];
 					return true;
-				}, rpValueOut("m"), "s");
+			}, { rpValueOut("m") }, "s");
 
 			reg["a"] ^= reg[src].toInt();
 		}
@@ -593,6 +709,11 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	/*
+	 *	These are the I/O and Machine Control Group of Instructions
+	 *	which are used for input/output ports, stack and machine control.
+	 */
+
 	bool hlt(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -619,13 +740,20 @@ public:
 		//Data Transfer Instructions
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
 		this->funMap["mov"] = bind(&Instructions::mov, this, _1, _2);
-		this->funMap["lxi"] = bind(&Instructions::lxi, this, _1, _2);
 		this->funMap["lda"] = bind(&Instructions::lda, this, _1, _2);
 		this->funMap["sta"] = bind(&Instructions::sta, this, _1, _2);
+		this->funMap["lxi"] = bind(&Instructions::lxi, this, _1, _2);
+		this->funMap["lhld"] = bind(&Instructions::lhld, this, _1, _2);
+		this->funMap["shld"] = bind(&Instructions::shld, this, _1, _2);
+		this->funMap["ldax"] = bind(&Instructions::ldax, this, _1, _2);
+		this->funMap["stad"] = bind(&Instructions::stax, this, _1, _2);
+		this->funMap["xchg"] = bind(&Instructions::xchg, this, _1, _2);
 
 		//Arithmetic Instructions
 		this->funMap["add"] = bind(&Instructions::add, this, _1, _2);
 		this->funMap["adi"] = bind(&Instructions::adi, this, _1, _2);
+		this->funMap["sub"] = bind(&Instructions::sub, this, _1, _2);
+		this->funMap["sui"] = bind(&Instructions::sui, this, _1, _2);
 		this->funMap["inr"] = bind(&Instructions::inr, this, _1, _2);
 
 		//Logical Instructions
