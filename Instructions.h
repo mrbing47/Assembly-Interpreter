@@ -26,7 +26,7 @@ class Instructions : public Register, public Error, public Constants
 		They help to minimise the code as much as possible
 	*/
 
-	void alter_flags(_Bit8 num1, _Bit8 num2, int res_value, string type_op)
+	void update_flags(_Bit8 num1, _Bit8 num2, int res_value, string type_op)
 	{
 		if (type_op == ADDITION)
 		{
@@ -43,7 +43,7 @@ class Instructions : public Register, public Error, public Constants
 		if (res_value < 0)
 			res_value += 256;
 
-		flags[PARITY_BIT] = cal_parity(res_value);
+		flags[PARITY_BIT] = cal_parity(res_value % 256);
 	}
 
 	int rpValueOut(string rp)
@@ -537,7 +537,7 @@ class Instructions : public Register, public Error, public Constants
 			else
 				reg_value = reg[src].toInt();
 
-			alter_flags(reg["a"], reg_value, reg_value + reg["a"].toInt(), ADDITION);
+			update_flags(reg["a"], reg_value, reg_value + reg["a"].toInt(), ADDITION);
 
 			reg["a"] += reg_value;
 			return true;
@@ -569,16 +569,9 @@ class Instructions : public Register, public Error, public Constants
 			else
 				reg_value = reg[src].toInt();
 
-			res_value = reg["a"].toInt() + reg_value;
+			res_value = reg["a"].toInt() + reg_value + (int)flags[CARRY_BIT];
 
-			alter_flags(reg["a"], reg_value, res_value, ADDITION);
-
-			reg["a"] = res_value + (int)flags[CARRY_BIT];
-
-			if (reg["a"] == 0)
-				flags[ZERO_BIT] = true;
-			else
-				flags[ZERO_BIT] = false;
+			update_flags(reg["a"], reg_value, res_value, ADDITION);
 
 			return true;
 		}
@@ -597,13 +590,9 @@ class Instructions : public Register, public Error, public Constants
 
 			if (checkHex(dec, 8))
 			{
-				res_value = reg["a"].toInt() + dec;
+				res_value = reg["a"].toInt() + dec + (int)flags[CARRY_BIT];
 
-				alter_flags(reg["a"], dec, res_value, ADDITION);
-
-				reg["a"] = res_value + (int)flags[CARRY_BIT];
-
-				alter_flags(reg["a"], dec, reg["a"].toInt() + dec, ADDITION);
+				update_flags(reg["a"], dec, res_value, ADDITION);
 
 				return true;
 			}
@@ -622,7 +611,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkHex(dec, 8))
 		{
-			alter_flags(reg["a"], dec, reg["a"].toInt() + dec, ADDITION);
+			update_flags(reg["a"], dec, reg["a"].toInt() + dec, ADDITION);
 			reg["a"] += dec;
 		}
 		else
@@ -636,28 +625,25 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 1))
 			return false;
 
-		if (reg.count(src))
-		{
-			if (src == "m")
-			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
-				{
-					reg["a"] -= memory[rpValueOut("m")];
-					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
-
-					return true;
-				}
-				else { return false; }
-			}
-
-			reg["a"] -= reg.at(src);
-			return true;
-		}
-		else
-		{
-			cout << INVALID_REG;
+		if (!checkReg(dest, src, 8))
 			return false;
+
+		int reg_value;
+
+		if (src == "m")
+		{
+			if (checkAddr({ rpValueOut("m") }, "s"))
+			{
+				reg_value = memory[rpValueOut("m")].toInt();
+			}
+			else { return false;}
 		}
+		else { reg_value = reg[src].toInt(); }
+
+		update_flags(reg["a"], reg_value, reg["a"].toInt()- reg_value, SUBTRACTION);
+
+		reg["a"] -= reg_value;
+		return true;
 	}
 
 	bool sui(string dest, string src)
@@ -669,7 +655,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkHex(dec, 8))
 		{
-			alter_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
+			update_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
 			reg["a"] -= dec;
 		}
 		else
@@ -683,28 +669,49 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 1))
 			return false;
 
-		if (reg.count(src))
+		if (!checkReg(dest, src, 8))
+			return false;
+
+		int reg_value;
+		if (src == "m")
 		{
-			if (src == "m")
+			if (checkAddr({ rpValueOut("m") }, "s"))
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
-				{
-					reg["a"] -= memory[rpValueOut("m")];
-					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
-
-					return true;
-				}
-				else { return false; }
+				reg_value = memory[rpValueOut("m")].toInt();
 			}
-
-			reg["a"] -= reg.at(src);
-			return true;
+			else { return false; }
 		}
 		else
-		{
-			cout << INVALID_REG;
+			reg_value = reg[src].toInt();
+
+		int res = reg["a"].toInt() - reg_value - (int)flags[CARRY_BIT];
+
+		update_flags(reg["a"], reg_value, res, SUBTRACTION);
+		return true;
+	}
+
+	bool sbi(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
 			return false;
+
+		if (checkReg(dest, src, 8))
+		{
+			int res_value;
+			int dec = hexToDec(src);
+
+			if (checkHex(dec, 8))
+			{
+				res_value = reg["a"].toInt() - dec - (int)flags[CARRY_BIT];
+
+				update_flags(reg["a"], dec, res_value, SUBTRACTION);
+
+				return true;
+			}
+			else
+				return false;
 		}
+		else { return false; }
 	}
 
 	bool inr(string dest, string src)
@@ -713,8 +720,22 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 		if (checkReg(dest, src, 8))
 		{
-			alter_flags(reg[src], 1, reg[src].toInt() + 1, ADDITION);
-			reg[src] += 1;
+			int reg_value;
+			if(src == "m")
+			{
+				if (!checkAddr({ rpValueOut("m") }, "s"))
+					return false;
+
+				reg_value = memory[rpValueOut("m")].toInt();
+				memory[rpValueOut("m")] += 1;
+			}
+			else
+			{
+				reg_value = reg[src].toInt();
+				reg[src] += 1;
+			}
+
+			update_flags(reg_value, 1, reg_value + 1, ADDITION);
 		}
 		else
 			return false;
@@ -728,11 +749,80 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 		if (checkReg(dest, src, 8))
 		{
-			alter_flags(reg[src], 1, reg[src].toInt() - 1, SUBTRACTION);
-			reg[src] -= 1;
+			int reg_value;
+			if (src == "m")
+			{
+				if (!checkAddr({ rpValueOut("m") }, "s"))
+					return false;
+
+				reg_value = memory[rpValueOut("m")].toInt();
+				memory[rpValueOut("m")] -= 1;
+			}
+			else
+			{
+				reg_value = reg[src].toInt();
+				reg[src] -= 1;
+			}
+
+			update_flags(reg_value, 1, reg_value - 1, SUBTRACTION);
 		}
 		else
 			return false;
+
+		return true;
+	}
+
+	bool inx(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if(!checkRP(src))
+			return false;
+
+		_Bit16 bit16 = rpValueOut(src);
+		bit16 += 1;
+		rpValueIn(src, bit16);
+
+		
+
+		return true;
+
+	}
+
+	bool dcx(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkRP(src))
+			return false;
+
+		_Bit16 bit16 = rpValueOut(src);
+		bit16 += 1;
+		rpValueIn(src, bit16);
+
+		return true;
+
+	}
+
+	bool dad(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if(!checkRP(src))
+			return false;
+
+		_Bit16 num1 = rpValueOut(src);
+		_Bit16 num2 = rpValueOut("h");
+
+		if (num1 + num2 > 65535)
+			flags[CARRY_BIT] = true;
+		else
+			flags[CARRY_BIT] = false;
+
+		rpValueIn("h", num1 + num2);
 
 		return true;
 	}
@@ -891,7 +981,7 @@ class Instructions : public Register, public Error, public Constants
 		else
 			reg_value = reg[src].toInt();
 			
-		alter_flags(reg["a"], reg_value, reg["a"].toInt() - reg_value, SUBTRACTION);
+		update_flags(reg["a"], reg_value, reg["a"].toInt() - reg_value, SUBTRACTION);
 
 		return true;
 	}
@@ -906,7 +996,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 8))
 			return false;
 
-		alter_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
+		update_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
 
 		return true;
 	}
@@ -1029,12 +1119,19 @@ public:
 		this->funMap["xchg"] = bind(&Instructions::xchg, this, _1, _2);
 
 		//Arithmetic Instructions
-		/*this->funMap["add"] = bind(&Instructions::add, this, _1, _2);
+		this->funMap["add"] = bind(&Instructions::add, this, _1, _2);
+		this->funMap["adc"] = bind(&Instructions::adc, this, _1, _2);
 		this->funMap["adi"] = bind(&Instructions::adi, this, _1, _2);
+		this->funMap["aci"] = bind(&Instructions::aci, this, _1, _2);
 		this->funMap["sub"] = bind(&Instructions::sub, this, _1, _2);
 		this->funMap["sui"] = bind(&Instructions::sui, this, _1, _2);
+		this->funMap["sbb"] = bind(&Instructions::sub, this, _1, _2);
 		this->funMap["inr"] = bind(&Instructions::inr, this, _1, _2);
-		*/
+		this->funMap["dcr"] = bind(&Instructions::dcr, this, _1, _2);
+		this->funMap["inx"] = bind(&Instructions::inx, this, _1, _2);
+		this->funMap["dcx"] = bind(&Instructions::dcx, this, _1, _2);
+		this->funMap["dad"] = bind(&Instructions::dad, this, _1, _2);
+
 		//Logical Instructions
 		this->funMap["ana"] = bind(&Instructions::ana, this, _1, _2);
 		this->funMap["ani"] = bind(&Instructions::ani, this, _1, _2);
