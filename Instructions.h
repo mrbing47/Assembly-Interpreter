@@ -34,6 +34,8 @@ class Instructions : public Register, public Error, public Constants
 			return (reg["d"].toInt() << 8) + reg["e"].toInt();
 		if (rp == "m")
 			return (reg["h"].toInt() << 8) + reg["l"].toInt();
+
+		return 0;
 	}
 
 	bool rpValueIn(string rp, int value)
@@ -97,7 +99,7 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	bool checkAddr(function<bool()> const& lamda, vector<_Bit16> vec_bit16, string type_addr)
+	bool checkAddr(vector<_Bit16> vec_bit16, string type_addr)
 	{
 		bool isFound = true;
 
@@ -109,10 +111,9 @@ class Instructions : public Register, public Error, public Constants
 			}
 			
 		
-		
 		if ((isFound || type_addr == "d") and memory.size() <= 2)
 		{
-			if (vec_bit16[0] > 4095) { return lamda(); }
+			if (vec_bit16[0] > 4095) { return true;}
 
 			cout << MEMORY_ACCESS_DENIED;
 			return false;
@@ -274,19 +275,22 @@ class Instructions : public Register, public Error, public Constants
 		{
 			if (src == "m")
 			{
-				return checkAddr([this, dest]() -> bool
+				if(checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg[dest] = memory[rpValueOut("m")];
 					return true;
-				}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
 			}
 			if (dest == "m")
 			{
-				return checkAddr([this, src]() -> bool
+				if(checkAddr({ rpValueOut("m") }, "d"))
 				{
 					memory[rpValueOut("m")] = reg[src];
 					return true;
-				}, { rpValueOut("m") }, "d");
+				}
+				else { return false; }
+
 			}
 			reg[dest] = reg[src];
 		}
@@ -309,11 +313,13 @@ class Instructions : public Register, public Error, public Constants
 			{
 				if (dest == "m")
 				{
-					return checkAddr([this, dec]() -> bool
+					if(checkAddr({ rpValueOut("m") }, "d"))
 					{
 						memory[rpValueOut("m")] = dec;
 						return true;
-					}, { rpValueOut("m") }, "d");
+					}
+					else { return false; }
+
 				}
 				reg[dest] = dec;
 			}
@@ -336,12 +342,12 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		return checkAddr([this, dec]()->bool
+		if (checkAddr({ dec }, "s"))
 		{
 			reg["a"] = memory[dec];
 			return true;
-
-		}, { dec }, "s");
+		}
+		else { return false; }
 
 		
 	}
@@ -356,12 +362,12 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		return checkAddr([this, dec]()->bool
+		if(checkAddr({ dec }, "d"))
 		{
 			memory[dec] = reg["a"];
 			return true;
-
-		}, { dec }, "d");
+		}
+		else { return false; }
 
 
 	}
@@ -393,13 +399,13 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		return checkAddr([this, dec]()->bool
+		if(checkAddr({ dec, dec + 1 }, "s"))
 		{
 			reg["l"] = memory[dec];
 			reg["h"] = memory[dec + 1];
 			return true;
-
-		}, {dec, dec + 1}, "s");
+		}
+		else { return false; }
 
 	}
 
@@ -413,13 +419,13 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		return checkAddr([this, dec]()->bool
+		if(checkAddr({ dec }, "d"))
 		{
 			memory[dec] = reg["l"];
 			memory[dec + 1] = reg["h"] ;
 			return true;
-
-		}, {dec}, "d");
+		}
+		else { return false; }
 
 	}
 
@@ -430,11 +436,15 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkRP(src))
 		{
-			return checkAddr([this, src]()->bool
+			if (checkAddr({ rpValueOut(src) }, "d"))
 			{
 				reg["a"] = memory[rpValueOut(src)];
 				return true;
-			}, { rpValueOut(src) }, "d");
+			}
+			else
+			{
+				return false;
+			}
 		}
 		else { return false; }
 
@@ -447,11 +457,12 @@ class Instructions : public Register, public Error, public Constants
 
 		if(checkRP(src))
 		{
-			return checkAddr([this,src]()->bool
+			if(checkAddr({ rpValueOut(src) }, "d"))
 			{
 				memory[rpValueOut(src)] = reg["a"];
 				return true;
-			}, {rpValueOut(src)}, "d");
+			}
+			else { return false; }
 		}
 		else { return false; }
 		
@@ -489,13 +500,16 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkAddr([this,src]()-> bool
+			{
+				if (checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg["a"] += memory[rpValueOut("m")];
 					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
 
 					return true;
-			}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
+			}
 
 			reg["a"] += reg.at(src);
 			return true;
@@ -533,13 +547,16 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkAddr([this, src]()-> bool
+			{
+				if (checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg["a"] -= memory[rpValueOut("m")];
 					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
 
 					return true;
-			}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
+			}
 
 			reg["a"] -= reg.at(src);
 			return true;
@@ -597,11 +614,14 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkAddr([this, src]() -> bool
+			{
+				if (checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg["a"] &= memory[rpValueOut("m")];
 					return true;
-			}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
+			}
 
 			reg["a"] &= reg[src];
 		}
@@ -637,11 +657,14 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkAddr([this, src]() -> bool
+			{
+				if (checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg["a"] |= memory[rpValueOut("m")];
 					return true;
-			}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
+			}
 
 			reg["a"] |= reg[src];
 		}
@@ -677,11 +700,14 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkAddr([this, src]() -> bool
+			{
+				if (checkAddr({ rpValueOut("m") }, "s"))
 				{
 					reg["a"] ^= memory[rpValueOut("m")];
 					return true;
-			}, { rpValueOut("m") }, "s");
+				}
+				else { return false; }
+			}
 
 			reg["a"] ^= reg[src].toInt();
 		}
@@ -746,7 +772,7 @@ public:
 		this->funMap["lhld"] = bind(&Instructions::lhld, this, _1, _2);
 		this->funMap["shld"] = bind(&Instructions::shld, this, _1, _2);
 		this->funMap["ldax"] = bind(&Instructions::ldax, this, _1, _2);
-		this->funMap["stad"] = bind(&Instructions::stax, this, _1, _2);
+		this->funMap["stax"] = bind(&Instructions::stax, this, _1, _2);
 		this->funMap["xchg"] = bind(&Instructions::xchg, this, _1, _2);
 
 		//Arithmetic Instructions
