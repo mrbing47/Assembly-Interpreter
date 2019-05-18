@@ -2,13 +2,12 @@
 
 using namespace std;
 
-int charindex(const string inst, const char ch)
+int max(int num_1, int num_2)
 {
-	int strlen = inst.length();
-	for (int i = 0; i < strlen; i++)
-		if (inst[i] == ch)
-			return i;
-	return -1;
+	if (num_1 > num_2)
+		return num_1;
+	else
+		return num_2;
 }
 
 string trim(const string inst)
@@ -77,36 +76,7 @@ int hexToDec(const string hexNum)
 	return decNum;
 }
 
-bool strequal(string first, string second, bool caseSensitive = false)
-{
-	if (first.length() == second.length())
-	{
-		int strlen = first.length();
-		for (int i = 0; i < strlen; i++)
-		{
-			char fch = first[i];
-			char sch = second[i];
-
-			if (!caseSensitive)
-			{
-				if ((int)sch > 64 and (int)sch < 91)
-					sch += 32;
-
-				if ((int)fch > 64 and (int)fch < 91)
-					fch += 32;
-			}
-
-			if (fch != sch)
-				return false;
-		}
-
-		return true;
-	}
-	else
-		return false;
-}
-
-vector<string> strsplit(string str, string splitpt)
+vector<string> str_split(string str, string splitpt)
 {
 	vector<string> resStr;
 	string temp = "";

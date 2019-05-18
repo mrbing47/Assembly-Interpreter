@@ -11,8 +11,8 @@
 #include "functions.h"
 #include "Constants.h"
 #include "Error.h"
-#include "Compiler.h"
 #include "datatypes.h"
+#include <iso646.h>
 
 using namespace std;
 using namespace std::placeholders;
@@ -26,17 +26,49 @@ class Instructions : public Register, public Error, public Constants
 		They help to minimise the code as much as possible
 	*/
 
-	int mValueOut() { return (reg["h"].toInt() << 8) + reg["l"].toInt(); }
-
-	void mValueIn(string value)
+	int rpValueOut(string rp)
 	{
+		if (rp == "b")
+			return (reg["b"].toInt() << 8) + reg["c"].toInt();
+		if (rp == "d")
+			return (reg["d"].toInt() << 8) + reg["e"].toInt();
+		if (rp == "m")
+			return (reg["h"].toInt() << 8) + reg["l"].toInt();
+
+		cout << INVALID_REG_PAIR;
+		return -1;
 	}
 
-	bool checkReg(string dest, string src)
+	bool rpValueIn(string rp, int value)
+	{
+		if (rp == "b")
+		{
+			reg["c"] = value % 256;
+			reg["b"] = value / 256;
+			return true;
+		}
+		if (rp == "d")
+		{
+			reg["e"] = value % 256;
+			reg["d"] = value / 256;
+			return true;
+		}
+		if (rp == "h")
+		{
+			reg["l"] = value % 256;
+			reg["h"] = value / 256;
+			return true;
+		}
+
+		cout << INVALID_REG_PAIR;
+		return false;
+	}
+
+	bool checkReg(string dest, string src, int bit)
 	{
 		if (dest.empty())
 		{
-			if (reg.count(src))
+			if ((bit == 8 and reg.count(src)) or (reg16.count(src) and bit == 16))
 				return true;
 			else
 			{
@@ -46,7 +78,8 @@ class Instructions : public Register, public Error, public Constants
 		}
 		else
 		{
-			if (reg.count(dest) && reg.count(src))
+			if ((bit == 8 and reg.count(dest) and reg.count(src)) or (
+				    bit == 16 and reg16.count(dest) and reg16.count(src)))
 				return true;
 			else
 			{
@@ -56,17 +89,17 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	bool checkmAddr(function<bool()> const& lamda, string reg)
+	bool checkAddr(function<bool()> const& lamda, _Bit16 bit16, string reg)
 	{
-		if (memory.count(mValueOut()) || reg == "d")
+		if (memory.count(bit16) || reg == "d")
 		{
-			if (mValueOut() > 4095) { return lamda(); }
+			if (bit16 > 4095) { return lamda(); }
 
 			cout << MEMORY_ACCESS_DENIED;
 			return false;
 		}
 
-		cout << INVALID_MEMORY_ACCESS;
+		cout << INVALID_MEMORY;
 		return false;
 	}
 
@@ -165,7 +198,7 @@ class Instructions : public Register, public Error, public Constants
 			int value = reg[src].toInt();
 
 			if (src == "m")
-				value = mValueOut();
+				value = rpValueOut("m");
 
 			cout << toUpperCase(src) << '=' << value << endl;
 		}
@@ -174,7 +207,10 @@ class Instructions : public Register, public Error, public Constants
 			if (reg16.count(src))
 				cout << toUpperCase(src) << "=" << reg[src] << endl;
 			else
+			{
+				cout << INVALID_REG;
 				return false;
+			}
 		}
 		return true;
 	}
@@ -215,23 +251,23 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 2))
 			return false;
 
-		if (checkReg(dest, src))
+		if (checkReg(dest, src, 8))
 		{
 			if (src == "m")
 			{
-				return checkmAddr([this, dest]() -> bool
+				return checkAddr([this, dest]() -> bool
 				{
-					reg[dest] = memory[mValueOut()];
+					reg[dest] = memory[rpValueOut("m")];
 					return true;
-				}, "s");
+				}, rpValueOut("m"), "s");
 			}
 			if (dest == "m")
 			{
-				return checkmAddr([this, src]() -> bool
+				return checkAddr([this, src]() -> bool
 				{
-					memory[mValueOut()] = reg[src];
+					memory[rpValueOut("m")] = reg[src];
 					return true;
-				}, "d");
+				}, rpValueOut("m"), "d");
 			}
 			reg[dest] = reg[src];
 		}
@@ -247,18 +283,18 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 2))
 			return false;
 
-		if (checkReg("",dest))
+		if (checkReg("", dest, 8))
 		{
 			int dec = hexToDec(src);
 			if (checkHex(dec, 8))
 			{
 				if (dest == "m")
 				{
-					return checkmAddr([this, dec]() -> bool
+					return checkAddr([this, dec]() -> bool
 					{
-						memory[mValueOut()] = dec;
+						memory[rpValueOut("m")] = dec;
 						return true;
-					}, "d");
+					}, rpValueOut("m"), "d");
 				}
 				reg[dest] = dec;
 			}
@@ -269,6 +305,63 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 
 		return true;
+	}
+
+	bool lda(string dest, string src)
+	{
+		if(!checkParams(dest,src,1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (!checkHex(dec, 16))
+			return false;
+
+		return checkAddr([this, dec]()->bool
+		{
+			reg["a"] = memory[dec];
+			return true;
+
+		}, dec, "s");
+
+		
+	}
+
+	bool sta(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (!checkHex(dec, 16))
+			return false;
+
+		return checkAddr([this, dec]()->bool
+		{
+			memory[dec] = reg["a"];
+			return true;
+
+		}, dec, "d");
+
+
+	}
+
+	bool lxi(string dest, string src)
+	{
+		if (!checkParams(dest, src, 2))
+			return false;
+
+		if (reg.count(dest))
+		{
+			int dec = hexToDec(src);
+			if (!checkHex(dec, 16))
+				return false;
+
+			rpValueIn(dest, dec);
+			return true;
+		}
+		return false;
 	}
 
 	/*
@@ -282,12 +375,21 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 1))
 			return false;
 
-		try
+		if (reg.count(src))
 		{
+			if (src == "m")
+				return checkAddr([this,src]()-> bool
+				{
+					reg["a"] += memory[rpValueOut("m")];
+					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
+
+					return true;
+				}, rpValueOut("m"), "s");
+
 			reg["a"] += reg.at(src);
 			return true;
 		}
-		catch (exception e)
+		else
 		{
 			cout << INVALID_REG;
 			return false;
@@ -302,7 +404,54 @@ class Instructions : public Register, public Error, public Constants
 		int dec = hexToDec(src);
 
 		if (checkHex(dec, 8))
+		{
 			reg["a"] += dec;
+			flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
+		}
+		else
+			return false;
+
+		return true;
+	}
+
+	bool sub(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (reg.count(src))
+		{
+			if (src == "m")
+				return checkAddr([this, src]()-> bool
+				{
+					reg["a"] -= memory[rpValueOut("m")];
+					flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
+
+					return true;
+				}, rpValueOut("m"), "s");
+
+			reg["a"] -= reg.at(src);
+			return true;
+		}
+		else
+		{
+			cout << INVALID_REG;
+			return false;
+		}
+	}
+
+	bool sui(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		int dec = hexToDec(src);
+
+		if (checkHex(dec, 8))
+		{
+			reg["a"] -= dec;
+			flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
+		}
 		else
 			return false;
 
@@ -313,13 +462,13 @@ class Instructions : public Register, public Error, public Constants
 	{
 		if (!checkParams(dest, src, 1))
 			return false;
-		if (reg.find(src) != reg.end())
-			reg[src] += 1;
-		else
+		if (checkReg(dest, src, 8))
 		{
-			cout << INVALID_REG;
-			return false;
+			reg[src] += 1;
+			flags[ZERO_BIT] = reg["a"] == 0 ? true : false;
 		}
+		else
+			return false;
 
 		return true;
 	}
@@ -332,11 +481,11 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkmAddr([this, src]() -> bool
+				return checkAddr([this, src]() -> bool
 				{
-					reg["a"] &= memory[mValueOut()];
+					reg["a"] &= memory[rpValueOut("m")];
 					return true;
-				}, "s");
+				}, rpValueOut("m"), "s");
 
 			reg["a"] &= reg[src];
 		}
@@ -372,11 +521,11 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkmAddr([this, src]() -> bool
+				return checkAddr([this, src]() -> bool
 				{
-					reg["a"] |= memory[mValueOut()];
+					reg["a"] |= memory[rpValueOut("m")];
 					return true;
-				}, "s");
+				}, rpValueOut("m"), "s");
 
 			reg["a"] |= reg[src];
 		}
@@ -412,11 +561,11 @@ class Instructions : public Register, public Error, public Constants
 		if (reg.count(src))
 		{
 			if (src == "m")
-				return checkmAddr([this, src]() -> bool
+				return checkAddr([this, src]() -> bool
 				{
-					reg["a"] ^= memory[mValueOut()];
+					reg["a"] ^= memory[rpValueOut("m")];
 					return true;
-				}, "s");
+				}, rpValueOut("m"), "s");
 
 			reg["a"] ^= reg[src].toInt();
 		}
@@ -470,6 +619,9 @@ public:
 		//Data Transfer Instructions
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
 		this->funMap["mov"] = bind(&Instructions::mov, this, _1, _2);
+		this->funMap["lxi"] = bind(&Instructions::lxi, this, _1, _2);
+		this->funMap["lda"] = bind(&Instructions::lda, this, _1, _2);
+		this->funMap["sta"] = bind(&Instructions::sta, this, _1, _2);
 
 		//Arithmetic Instructions
 		this->funMap["add"] = bind(&Instructions::add, this, _1, _2);

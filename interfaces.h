@@ -1,16 +1,19 @@
 #pragma once
 
-#include"datatypes.h"
-
-class executeClass
+class CompilerExecute
 {
 public:
-	virtual void execute() = 0;
+	virtual bool execute() = 0;
 };
 
-class saveClass 
+class CompilerSave
 {
 public:
-	virtual executeClass* save(_Label, vector<string>) = 0;
+	virtual CompilerExecute* save() = 0;
 };
 
+class CompilerProcess
+{
+public:
+	virtual CompilerSave* process(string) = 0;
+};

@@ -23,7 +23,7 @@ public:
 	{
 	}
 
-	int toInt() { return this->value; }
+	int toInt() const { return this->value; }
 
 	void operator+=(const _Bit8 bit8)
 	{
