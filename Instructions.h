@@ -102,7 +102,7 @@ class Instructions : public Register, public Error, public Constants
 				return true;
 			else
 			{
-				cout << INVALID_REG << "here";
+				cout << INVALID_REG;
 				return false;
 			}
 		}
@@ -116,6 +116,18 @@ class Instructions : public Register, public Error, public Constants
 				cout << INVALID_REG;
 				return false;
 			}
+		}
+	}
+
+	bool checkLabel(_Label label)
+	{
+		if(labelMap.count(label))
+			return true;
+
+		else
+		{
+			cout << INVALID_LABEL;
+			return false;
 		}
 	}
 
@@ -196,6 +208,24 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	void printProgramStack(stack<pair<string,_Bit16>> temp_stack)
+	{
+		while(!temp_stack.empty())
+		{
+			cout << temp_stack.top().first << '\t' << temp_stack.top().second << endl;
+			temp_stack.pop();
+		}
+	}
+
+	void printSubStack(stack<string> temp_stack)
+	{
+		while (!temp_stack.empty())
+		{
+			cout << temp_stack.top() << endl;
+			temp_stack.pop();
+		}
+	}
+
 	/*
 		These are the Custom Instructions to help the programmer
 		look into the value of memory, register, and Label map
@@ -245,7 +275,7 @@ class Instructions : public Register, public Error, public Constants
 		else
 		{
 			if (reg16.count(src))
-				cout << toUpperCase(src) << "=" << reg[src] << endl;
+				cout << toUpperCase(src) << "=" << reg16[src] << endl;
 			else
 			{
 				cout << INVALID_REG;
@@ -299,6 +329,42 @@ class Instructions : public Register, public Error, public Constants
 			cout << (int)flags[i] << '\n';
 		}
 
+		return true;
+	}
+
+	bool shlp(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		cout << loop_count << endl;
+		return true;
+	}
+
+	bool shsr(string dest,string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		printSubStack(sub_stack);
+		return true;
+	}
+
+	bool sbr(string dest, string src)
+	{
+		if(!checkParams(dest,src,0))
+			return false;
+
+		isSubRoutineEnable = true;
+		return true;
+	}
+
+	bool shp(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		printProgramStack(programStack);
 		return true;
 	}
 
@@ -1076,6 +1142,297 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	/*
+	 *	These are the Branch Control Group of Instructions
+	 *	which are use to make conditional and unconditional
+	 *	jump, subroutine call and return, and restart.
+	 */
+
+	bool jmp(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (!loop_count)
+		{
+			if (reg16["pc"] == labelMap[src])
+			{
+				cout << INFINITE_LOOP;
+				return false;
+			}
+			cout << LOOP_STARTED;
+			loop_count++;
+			reg16["pc"] = labelMap[src];
+		}
+		else
+			reg16["pc"] = labelMap[src] - 1;
+
+
+		return true;
+	}
+
+	bool jnz(string dest, string src)
+	{
+		if(!checkParams(dest,src,1))
+			return false;
+
+		if(!checkLabel(src))
+			return false;
+
+		if (!flags[ZERO_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool jz(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (flags[ZERO_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool jnc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (!flags[CARRY_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool jc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (flags[CARRY_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool jpe(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (flags[PARITY_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool jpo(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		if (!flags[PARITY_BIT])
+		{
+			if (!loop_count)
+			{
+				if (reg16["pc"] == labelMap[src])
+				{
+					cout << INFINITE_LOOP;
+					return false;
+				}
+				cout << LOOP_STARTED;
+				loop_count++;
+				reg16["pc"] = labelMap[src];
+			}
+			else
+				reg16["pc"] = labelMap[src] - 1;
+		}
+		else
+		{
+			if (loop_count)
+				cout << LOOP_ENDED;
+
+			loop_count--;
+		}
+
+		return true;
+	}
+
+	bool call(string dest, string src)
+	{
+		if(!checkParams(dest,src,1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1]; 
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool ret(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB <<  sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
 
 	/*
 	 *	These are the I/O and Machine Control Group of Instructions
@@ -1095,6 +1452,10 @@ class Instructions : public Register, public Error, public Constants
 public:
 
 	map<string, function<bool(string, string)>> funMap;
+	int loop_count = 0;
+	bool isSubRoutineEnable = false;
+	int sub_routine_count = 0;
+
 
 	Instructions()
 	{
@@ -1103,8 +1464,11 @@ public:
 		this->funMap["shm"] = bind(&Instructions::shm, this, _1, _2);
 		this->funMap["shl"] = bind(&Instructions::shl, this, _1, _2);
 		this->funMap["shf"] = bind(&Instructions::shf, this, _1, _2);
+		this->funMap["shsr"] = bind(&Instructions::shsr, this, _1, _2);
+		this->funMap["shlp"] = bind(&Instructions::shlp, this, _1, _2);
 		this->funMap["htd"] = bind(&Instructions::htd, this, _1, _2);
 		this->funMap["hlp"] = bind(&Instructions::hlp, this, _1, _2);
+		this->funMap["sbr"] = bind(&Instructions::sbr, this, _1, _2);
 		
 		//Data Transfer Instructions
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
@@ -1151,6 +1515,15 @@ public:
 		this->funMap["rar"] = bind(&Instructions::rar, this, _1, _2);
 
 		//Branch Control Instructions
+		this->funMap["jmp"] = bind(&Instructions::jmp, this, _1, _2);
+		this->funMap["jnz"] = bind(&Instructions::jnz, this, _1, _2);
+		this->funMap["jz"] = bind(&Instructions::jz, this, _1, _2);
+		this->funMap["jnc"] = bind(&Instructions::jnc, this, _1, _2);
+		this->funMap["jc"] = bind(&Instructions::jc, this, _1, _2);
+		this->funMap["jpe"] = bind(&Instructions::jpe, this, _1, _2);
+		this->funMap["jpo"] = bind(&Instructions::jpo, this, _1, _2);
+		this->funMap["call"] = bind(&Instructions::call, this, _1, _2);
+		this->funMap["ret"] = bind(&Instructions::ret, this, _1, _2);
 
 		//I/O and Machine Control Instructions
 		this->funMap["hlt"] = bind(&Instructions::hlt, this, _1, _2);

@@ -17,6 +17,7 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 {
 	bool isProcessSuccessful = false;
 	bool isSaveSuccessful = false;
+	bool isLoopStarted = false;
 
 	Constants constants;
 
@@ -27,9 +28,9 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 
 	bool addLabel()
 	{
-		if (labelMap.find(this->label) == labelMap.end())
+		if (!this->labelMap.count(label))
 		{
-			this->labelMap.insert(pair<_Label, _Bit16>(this->label, reg16["pc"]));
+			this->labelMap.insert(pair<_Label, _Bit16>(label, reg16["pc"]));
 			return true;
 		}
 		else
@@ -52,7 +53,17 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 		inst.erase(reg16["pc"]);
 	}
 
-	Compiler(){};
+	void execute_sub_or_loop()
+	{
+		while(loop_count)
+		{
+			execute();
+		}
+	}
+
+	Compiler()
+	{
+	};
 
 public:
 
@@ -84,10 +95,9 @@ public:
 	{
 		if (isProcessSuccessful)
 		{
-			if (this->label != "")
+			if (label != "")
 				if (!addLabel())
 				{
-					cout << DUPLICATE_LABEL;
 					isSaveSuccessful = false;
 					return this;
 				}
@@ -126,32 +136,74 @@ public:
 
 	bool execute() override
 	{
-		
 		if (isSaveSuccessful)
 		{
-			map<string, string> op = this->inst[reg16["pc"]];
-
-			string opcode = op[constants.MAP_OPCODE];
-
-			if (funMap.find(opcode) != funMap.end())
+			if (!isSubRoutineEnable)
 			{
-				const bool isExecuted = funMap[opcode](
-					op[constants.MAP_DEST]
-					, op[constants.MAP_SRC]
-					);
+				map<string, string> op = this->inst[reg16["pc"]];
 
-				if (!isExecuted)
-					deleteInst();
+				string opcode = op[constants.MAP_OPCODE];
+
+				if (funMap.find(opcode) != funMap.end())
+				{
+					const bool isExecuted = funMap[opcode](
+						op[constants.MAP_DEST]
+						, op[constants.MAP_SRC]
+						);
+
+					if (!isLoopStarted && loop_count)
+					{
+						isLoopStarted = true;
+						execute_sub_or_loop();
+					}
+					if (isLoopStarted && !loop_count)
+						isLoopStarted = false;
+
+					if (!isExecuted)
+					{
+						if (!loop_count && !isSubRoutineEnable)
+						{
+							deleteInst();
+							return false;
+						}
+
+						if (!programStack.empty())
+						{
+							while (!programStack.empty() and programStack.top().first != sub_stack.top())
+								programStack.pop();
+
+							reg16["pc"] = programStack.top().second;
+							programStack.pop();
+							sub_stack.pop();
+							--sub_routine_count;
+
+							if (sub_routine_count == 0)
+							{
+								isLoopStarted = false;;
+								loop_count--;
+							}
+						}
+					}
+				}
 				else
-					reg16["pc"] += 1;
+				{
+					deleteInst();
+					cout << INVALID_INST << opcode << "\n\n";
+					return false;
+				}
 			}
 			else
 			{
-				deleteInst();
-				cout << INVALID_INST;
+				map<string, string> op = this->inst[reg16["pc"]];
+
+				if(op[constants.MAP_OPCODE] == "ret")
+				{
+					isSubRoutineEnable = false;
+				}
 			}
+			reg16["pc"] += 1;
+
 		}
 		return this->isHLT;
 	}
-
 };

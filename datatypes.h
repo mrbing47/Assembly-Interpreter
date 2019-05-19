@@ -563,25 +563,25 @@ inline bool operator !=(const char* str, const _Label label) { return label.str 
 inline bool operator <=(const char* str, const _Label label)
 {
 	string temp = str;
-	return temp.length() <= label.str.length();
+	return temp <= label.str;
 }
 
 inline bool operator >=(const char* str, const _Label label)
 {
 	string temp = str;
-	return temp.length() >= label.str.length();
+	return temp >= label.str;
 }
 
 inline bool operator >(const char* str, const _Label label)
 {
 	string temp = str;
-	return temp.length() > label.str.length();
+	return temp > label.str;
 }
 
 inline bool operator <(const char* str, const _Label label)
 {
 	string temp = str;
-	return temp.length() < label.str.length();
+	return temp < label.str;
 }
 
 inline _Label operator +(_Label label, const char* str)
@@ -597,25 +597,25 @@ inline bool operator !=(const _Label label, const char* str) { return label.str 
 inline bool operator <=(const _Label label, const char* str)
 {
 	string temp = str;
-	return label.str.length() <= temp.length();
+	return label.str <= temp;
 }
 
 inline bool operator >=(const _Label label, const char* str)
 {
 	string temp = str;
-	return label.str.length() >= temp.length();
+	return label.str >= temp;
 }
 
 inline bool operator <(const _Label label, const char* str)
 {
 	string temp = str;
-	return label.str.length() < temp.length();
+	return label.str < temp;
 }
 
 inline bool operator >(const _Label label, const char* str)
 {
 	string temp = str;
-	return label.str.length() > temp.length();
+	return label.str > temp;
 }
 
 inline _Label operator +(_Label l1, const _Label l2)
@@ -628,10 +628,10 @@ inline bool operator ==(const _Label l1, const _Label l2) { return l1.str == l2.
 
 inline bool operator !=(const _Label l1, const _Label l2) { return l1.str != l2.str; }
 
-inline bool operator <=(const _Label l1, const _Label l2) { return l1.str.length() <= l2.str.length(); }
+inline bool operator <=(const _Label l1, const _Label l2) { return l1.str <= l2.str; }
 
-inline bool operator >=(const _Label l1, const _Label l2) { return l1.str.length() >= l2.str.length(); }
+inline bool operator >=(const _Label l1, const _Label l2) { return l1.str >= l2.str; }
 
-inline bool operator <(const _Label l1, const _Label l2) { return l1.str.length() < l2.str.length(); }
+inline bool operator <(const _Label l1, const _Label l2) { return l1.str < l2.str; }
 
-inline bool operator >(const _Label l1, const _Label l2) { return l1.str.length() > l2.str.length(); }
+inline bool operator >(const _Label l1, const _Label l2) { return l1.str > l2.str; }

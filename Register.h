@@ -9,6 +9,7 @@ using namespace std;
 class Register
 {
 public:
+	virtual ~Register() = default;
 	map<string, _Bit8> reg;
 	map<string, _Bit16> reg16;
 
@@ -17,7 +18,8 @@ public:
 	map<_Bit16, map<string, string>> inst;
 	map<_Label, _Bit16> labelMap;
 	map<_Bit16, _Bit8> memory;
-	stack <pair<char, _Bit8>> programStack;
+	stack <pair<string, _Bit16>> programStack;
+	stack<string> sub_stack;
 
 	Register()
 	{
