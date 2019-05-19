@@ -834,27 +834,26 @@ class Instructions : public Register, public Error, public Constants
 	{
 		if (!checkParams(dest, src, 1))
 			return false;
-		if (checkReg(dest, src, 8))
+
+		if (!checkReg(dest, src, 8))
+			return false;
+
+		int reg_value;
+		if (src == "m")
 		{
-			int reg_value;
-			if (src == "m")
-			{
-				if (!checkAddr({ rpValueOut("h") }, "s", 8192))
-					return false;
+			if (!checkAddr({ rpValueOut("h") }, "s", 8192))
+				return false;
 
-				reg_value = memory[rpValueOut("h")].toInt();
-				memory[rpValueOut("h")] -= 1;
-			}
-			else
-			{
-				reg_value = reg[src].toInt();
-				reg[src] -= 1;
-			}
-
-			update_flags(reg_value, 1, reg_value - 1, SUBTRACTION);
+			reg_value = memory[rpValueOut("h")].toInt();
+			memory[rpValueOut("h")] -= 1;
 		}
 		else
-			return false;
+		{
+			reg_value = reg[src].toInt();
+			reg[src] -= 1;
+		}
+
+		update_flags(reg_value, 1, reg_value - 1, SUBTRACTION);
 
 		return true;
 	}
@@ -886,7 +885,7 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 
 		_Bit16 bit16 = rpValueOut(src);
-		bit16 += 1;
+		bit16 -= 1;
 		rpValueIn(src, bit16);
 
 		return true;
@@ -1198,9 +1197,7 @@ class Instructions : public Register, public Error, public Constants
 			loop_count++;
 		}
 
-		int val = (bool)(sub_routine_count + loop_count);
-
-		reg16["pc"] = labelMap[src] - val;
+		reg16["pc"] = labelMap[src] - 1;
 
 		return true;
 	}
@@ -1234,13 +1231,9 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
-
-			reg16["pc"] = labelMap[src] - val;
-
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
@@ -1285,9 +1278,7 @@ class Instructions : public Register, public Error, public Constants
 
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
-
-			reg16["pc"] = labelMap[src] - val;
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
@@ -1332,9 +1323,7 @@ class Instructions : public Register, public Error, public Constants
 
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
-
-			reg16["pc"] = labelMap[src] - val;
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
@@ -1379,9 +1368,7 @@ class Instructions : public Register, public Error, public Constants
 
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
-
-			reg16["pc"] = labelMap[src] - val;
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
@@ -1426,9 +1413,7 @@ class Instructions : public Register, public Error, public Constants
 
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
-
-			reg16["pc"] = labelMap[src] - val;
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
@@ -1472,9 +1457,8 @@ class Instructions : public Register, public Error, public Constants
 				loop_count++;
 			}
 
-			int val = (bool)(sub_routine_count + loop_count);
+			reg16["pc"] = labelMap[src] - 1;
 
-			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1507,9 +1491,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1540,9 +1523,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1573,9 +1555,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1606,9 +1587,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1639,9 +1619,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1672,9 +1651,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1705,9 +1683,8 @@ class Instructions : public Register, public Error, public Constants
 
 		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		const int val = (bool)(sub_routine_count + loop_count);
+		reg16["pc"] = labelMap[src] - 1;
 
-		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
 		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
@@ -1896,9 +1873,6 @@ class Instructions : public Register, public Error, public Constants
 
 		rpValueIn(src, memory[reg16["sp"]], memory[reg16["sp"] - 1]);
 
-		memory.erase(reg16["sp"]);
-		memory.erase(reg16["sp"] - 1);
-
 		reg16["sp"] -= 2;
 	
 		return true;
@@ -1953,35 +1927,6 @@ public:
 	int loop_count = 0;
 	bool isSubRoutineEnable = false;
 	int sub_routine_count = 0;
-
-	void pushM(_Bit8 higher_bits, _Bit8 lower_bits)
-	{
-		reg16["sp"] += 1;
-		memory[reg16["sp"]] = lower_bits;
-		memory[reg16["sp"] + 1] = higher_bits;
-		reg16["sp"] += 1;
-	}
-
-	_Bit16 topM()
-	{
-		_Bit8 hBits = memory[reg16["sp"]];
-		_Bit8 lBits = memory[reg16["sp"] + 1];
-		return hBits.toInt() * 256 + lBits.toInt();
-	}
-
-	void popM()
-	{
-		reg16["sp"] -= 2;
-	}
-
-	bool emptyM()
-	{
-		if(reg16["sp"] == 0x0fff)
-			return true;
-		else
-			return false;
-	}
-
 
 	Instructions()
 	{

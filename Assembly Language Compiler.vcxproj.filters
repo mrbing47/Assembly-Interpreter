@@ -38,10 +38,10 @@
     <ClInclude Include="datatypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Error.h">
+    <ClInclude Include="Instructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Instructions.h">
+    <ClInclude Include="Error.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

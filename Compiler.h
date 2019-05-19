@@ -154,6 +154,7 @@ public:
 					if (!isLoopStarted and (loop_count or sub_routine_count))
 					{
 						isLoopStarted = true;
+						reg16["pc"] += 1;
 						execute_sub_or_loop();
 					}
 					if (isLoopStarted and !(loop_count or sub_routine_count))
