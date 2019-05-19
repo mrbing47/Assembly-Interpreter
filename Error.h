@@ -17,5 +17,7 @@ public:
 	const string MEMORY_ACCESS_DENIED = "\nERROR: MEMORY_ACCESS_DENIED\n\n";
 	const string INFINITE_LOOP = "\nERROR: INFINITE_LOOP, cannot jump to the same line.\n\n";
 	const string INVALID_CALL = "\nERROR: INVALID_CALL, only use CALL for subroutine.\n\n";
+	const string INVALID_POP = "\nERROR: INVALID_POP, can not find the rp in the top of the stack.\n\n";
+	const string EMPTY_STACK = "\nERROR: EMPTY_STACK\n\n";
 };
 

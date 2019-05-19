@@ -1776,6 +1776,79 @@ class Instructions : public Register, public Error, public Constants
 	 *	which are used for input/output ports, stack and machine control.
 	 */
 
+	bool push(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if(!checkRP(src))
+			return false;
+
+		programStack.push(pair<string, _Bit16>(src, rpValueOut(src)));
+
+		return true;
+	}
+
+	bool pop(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkRP(src))
+			return false;
+
+		string rp = programStack.top().first;
+
+		if(rp != src)
+		{
+			cout << INVALID_POP;
+			return false;
+		}
+
+		programStack.push(pair<string, _Bit16>(src, rpValueOut(src)));
+
+		return true;
+	}
+
+	bool sphl(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		push("", "h");
+
+		return true;
+	}
+
+	bool xthl(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+
+		if(programStack.empty())
+		{
+			cout << EMPTY_STACK;
+			return false;
+		}
+
+		_Bit16 bit16 = programStack.top().second;
+
+		if (!checkAddr({ bit16, bit16 + 1 }, "s"))
+			return false;
+
+		_Bit8 bitl = memory[bit16];
+		_Bit8 bith = memory[bit16 + 1];
+
+		memory[bit16] = reg["l"];
+		memory[bit16 + 1] = reg["h"];
+
+		reg["l"] = bitl;
+		reg["h"] = bith;
+
+		return true;
+	}
+
 	bool hlt(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -1806,6 +1879,7 @@ public:
 		this->funMap["htd"] = bind(&Instructions::htd, this, _1, _2);
 		this->funMap["hlp"] = bind(&Instructions::hlp, this, _1, _2);
 		this->funMap["sbr"] = bind(&Instructions::sbr, this, _1, _2);
+		this->funMap["shp"] = bind(&Instructions::shp, this, _1, _2);
 		
 		//Data Transfer Instructions
 		this->funMap["mvi"] = bind(&Instructions::mvi, this, _1, _2);
@@ -1860,9 +1934,26 @@ public:
 		this->funMap["jpe"] = bind(&Instructions::jpe, this, _1, _2);
 		this->funMap["jpo"] = bind(&Instructions::jpo, this, _1, _2);
 		this->funMap["call"] = bind(&Instructions::call, this, _1, _2);
+		this->funMap["cz"] = bind(&Instructions::cz, this, _1, _2);
+		this->funMap["cnz"] = bind(&Instructions::cnz, this, _1, _2);
+		this->funMap["cc"] = bind(&Instructions::cc, this, _1, _2);
+		this->funMap["cnc"] = bind(&Instructions::cnc, this, _1, _2);
+		this->funMap["cpe"] = bind(&Instructions::cpe, this, _1, _2);
+		this->funMap["cpo"] = bind(&Instructions::cpo, this, _1, _2);
 		this->funMap["ret"] = bind(&Instructions::ret, this, _1, _2);
+		this->funMap["rz"] = bind(&Instructions::rz, this, _1, _2);
+		this->funMap["rnz"] = bind(&Instructions::rnz, this, _1, _2);
+		this->funMap["rc"] = bind(&Instructions::rc, this, _1, _2);
+		this->funMap["rnc"] = bind(&Instructions::rnc, this, _1, _2);
+		this->funMap["rpe"] = bind(&Instructions::rpe, this, _1, _2);
+		this->funMap["rpo"] = bind(&Instructions::rpo, this, _1, _2);
 
 		//I/O and Machine Control Instructions
 		this->funMap["hlt"] = bind(&Instructions::hlt, this, _1, _2);
+		this->funMap["sphl"] = bind(&Instructions::sphl, this, _1, _2);
+		this->funMap["xthl"] = bind(&Instructions::xthl, this, _1, _2);
+		this->funMap["push"] = bind(&Instructions::push, this, _1, _2);
+		this->funMap["pop"] = bind(&Instructions::pop, this, _1, _2);
+
 	}
 };
