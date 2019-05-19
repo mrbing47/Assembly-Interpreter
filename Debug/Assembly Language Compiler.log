@@ -1,7 +1,2 @@
 ﻿  Source.cpp
-c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\instructions.h(1828): error C2440: 'initializing': cannot convert from '_Ty2' to '_Bit8'
-          with
-          [
-              _Ty2=_Bit16
-          ]
-  c:\users\sarthik\documents\visual studio 2017\projects\assembly language compiler\assembly language compiler\instructions.h(1828): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+  Assembly Language Compiler.vcxproj -> C:\Users\Sarthik\Documents\Visual Studio 2017\Projects\Assembly Language Compiler\Debug\Assembly Language Compiler.exe

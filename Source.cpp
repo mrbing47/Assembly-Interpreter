@@ -12,7 +12,7 @@ using namespace std;
 int main()
 {
 	string input = "";
-
+	
 	CompilerProcess* compiler = Compiler::create();
 
 	bool isHLT = false;

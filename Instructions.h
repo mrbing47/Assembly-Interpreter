@@ -52,35 +52,55 @@ class Instructions : public Register, public Error, public Constants
 			return (reg["b"].toInt() << 8) + reg["c"].toInt();
 		if (rp == "d")
 			return (reg["d"].toInt() << 8) + reg["e"].toInt();
-		if (rp == "m")
+		if (rp == "h")
 			return (reg["h"].toInt() << 8) + reg["l"].toInt();
 
 		return 0;
 	}
 
-	bool rpValueIn(string rp, _Bit16 value)
+	void rpValueIn(string rp, _Bit16 value)
 	{
 		if (rp == "b")
 		{
 			reg["c"] = value.toInt() % 256;
 			reg["b"] = value.toInt() / 256;
-			return true;
+			return;
 		}
 		if (rp == "d")
 		{
 			reg["e"] = value.toInt() % 256;
 			reg["d"] = value.toInt() / 256;
-			return true;
+			return;
 		}
 		if (rp == "h")
 		{
 			reg["l"] = value.toInt() % 256;
 			reg["h"] = value.toInt() / 256;
-			return true;
+			return;
 		}
 
-		cout << INVALID_REG_PAIR;
-		return false;
+	}
+	void rpValueIn(string rp, _Bit8 higher_bits, _Bit8 lower_bits)
+	{
+		if (rp == "b")
+		{
+			reg["c"] = lower_bits;
+			reg["b"] = higher_bits;
+			return;
+		}
+		if (rp == "d")
+		{
+			reg["e"] = lower_bits;
+			reg["d"] = higher_bits;
+			return;
+		}
+		if (rp == "h")
+		{
+			reg["l"] = lower_bits;
+			reg["h"] = higher_bits;
+			return;
+		}
+
 	}
 
 	bool checkRP(string rp)
@@ -131,21 +151,26 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	bool checkAddr(vector<_Bit16> vec_bit16, string type_addr)
+	bool checkAddr(vector<_Bit16> vec_bit16, string type_addr, int lower_memory_limit, int upper_memory_limit = 65536)
 	{
 		bool isFound = true;
+		bool isInRange = true;
 
 		for (auto i = vec_bit16.begin(); i != vec_bit16.end(); i++)
-			if (!memory.count(*i))
-			{
-				isFound = false;
-				break;
-			}
-
-
-		if ((isFound || type_addr == "d") and memory.size() <= 2)
 		{
-			if (vec_bit16[0] > 4095) { return true; }
+			if ((*i < lower_memory_limit or *i >= upper_memory_limit) and isInRange)
+				isInRange = false;
+				
+			
+		
+			if (!memory.count(*i))
+				isFound = false;	
+		}
+
+		
+		if ((isFound || type_addr == "d") and !vec_bit16.empty())
+		{
+			if (isInRange) { return true; }
 
 			cout << MEMORY_ACCESS_DENIED;
 			return false;
@@ -217,15 +242,6 @@ class Instructions : public Register, public Error, public Constants
 		}
 	}
 
-	void printSubStack(stack<string> temp_stack)
-	{
-		while (!temp_stack.empty())
-		{
-			cout << temp_stack.top() << endl;
-			temp_stack.pop();
-		}
-	}
-
 	/*
 		These are the Custom Instructions to help the programmer
 		look into the value of memory, register, and Label map
@@ -268,7 +284,7 @@ class Instructions : public Register, public Error, public Constants
 			int value = reg[src].toInt();
 
 			if (src == "m")
-				value = rpValueOut("m");
+				value = rpValueOut("h");
 
 			cout << toUpperCase(src) << '=' << value << endl;
 		}
@@ -341,15 +357,6 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
-	bool shsr(string dest,string src)
-	{
-		if (!checkParams(dest, src, 0))
-			return false;
-
-		printSubStack(sub_stack);
-		return true;
-	}
-
 	bool sbr(string dest, string src)
 	{
 		if(!checkParams(dest,src,0))
@@ -364,7 +371,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 0))
 			return false;
 
-		printProgramStack(programStack);
+		printProgramStack(sub_stack);
 		return true;
 	}
 
@@ -383,18 +390,18 @@ class Instructions : public Register, public Error, public Constants
 		{
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
+				if (checkAddr({ rpValueOut("h") }, "s",8192))
 				{
-					reg[dest] = memory[rpValueOut("m")];
+					reg[dest] = memory[rpValueOut("h")];
 					return true;
 				}
 				else { return false; }
 			}
 			if (dest == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "d"))
+				if (checkAddr({ rpValueOut("h") }, "d",8192))
 				{
-					memory[rpValueOut("m")] = reg[src];
+					memory[rpValueOut("h")] = reg[src];
 					return true;
 				}
 				else { return false; }
@@ -420,9 +427,9 @@ class Instructions : public Register, public Error, public Constants
 			{
 				if (dest == "m")
 				{
-					if (checkAddr({ rpValueOut("m") }, "d"))
+					if (checkAddr({ rpValueOut("h") }, "d", 8192))
 					{
-						memory[rpValueOut("m")] = dec;
+						memory[rpValueOut("h")] = dec;
 						return true;
 					}
 					else { return false; }
@@ -448,7 +455,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		if (checkAddr({ dec }, "s"))
+		if (checkAddr({ dec }, "s", 8192))
 		{
 			reg["a"] = memory[dec];
 			return true;
@@ -466,7 +473,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		if (checkAddr({ dec }, "d"))
+		if (checkAddr({ dec }, "d", 8192))
 		{
 			memory[dec] = reg["a"];
 			return true;
@@ -478,17 +485,31 @@ class Instructions : public Register, public Error, public Constants
 	{
 		if (!checkParams(dest, src, 2))
 			return false;
-
-		if (reg.count(dest))
+		
+		int dec = hexToDec(src);
+		
+		if (!checkHex(dec, 16))
+			return false;
+		if (dest == "b" || dest == "d" || dest == "h")
 		{
-			int dec = hexToDec(src);
-			if (!checkHex(dec, 16))
-				return false;
-
 			rpValueIn(dest, dec);
-			return true;
 		}
-		return false;
+		else
+		{
+			if (dest == "sp")
+			{
+				if(!checkAddr({dec},"d",4096,8192))
+					return false;
+				
+				reg16["sp"] = dec;
+			}
+			else
+			{
+				cout << INVALID_REG;
+				return false;
+			}
+		}
+		return true;
 	}
 
 	bool lhld(string dest, string src)
@@ -501,7 +522,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		if (checkAddr({ dec, dec + 1 }, "s"))
+		if (checkAddr({ dec, dec + 1 }, "s", 8192))
 		{
 			reg["l"] = memory[dec];
 			reg["h"] = memory[dec + 1];
@@ -520,7 +541,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 16))
 			return false;
 
-		if (checkAddr({ dec }, "d"))
+		if (checkAddr({ dec }, "d", 8192))
 		{
 			memory[dec] = reg["l"];
 			memory[dec + 1] = reg["h"];
@@ -536,7 +557,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkRP(src))
 		{
-			if (checkAddr({ rpValueOut(src) }, "d"))
+			if (checkAddr({ rpValueOut(src) }, "d", 8192))
 			{
 				reg["a"] = memory[rpValueOut(src)];
 				return true;
@@ -553,7 +574,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkRP(src))
 		{
-			if (checkAddr({ rpValueOut(src) }, "d"))
+			if (checkAddr({ rpValueOut(src) }, "d", 8192))
 			{
 				memory[rpValueOut(src)] = reg["a"];
 				return true;
@@ -597,7 +618,7 @@ class Instructions : public Register, public Error, public Constants
 			int reg_value;
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s")) { reg_value = memory[rpValueOut("m")].toInt(); }
+				if (checkAddr({ rpValueOut("h") }, "s", 8192)) { reg_value = memory[rpValueOut("h")].toInt(); }
 				else { return false; }
 			}
 			else
@@ -627,8 +648,8 @@ class Instructions : public Register, public Error, public Constants
 
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
-					reg_value = memory[rpValueOut("m")].toInt();
+				if (checkAddr({ rpValueOut("h") }, "s", 8192))
+					reg_value = memory[rpValueOut("h")].toInt();
 				else
 					return false;
 			}
@@ -698,9 +719,9 @@ class Instructions : public Register, public Error, public Constants
 
 		if (src == "m")
 		{
-			if (checkAddr({ rpValueOut("m") }, "s"))
+			if (checkAddr({ rpValueOut("h") }, "s", 8192))
 			{
-				reg_value = memory[rpValueOut("m")].toInt();
+				reg_value = memory[rpValueOut("h")].toInt();
 			}
 			else { return false;}
 		}
@@ -741,9 +762,9 @@ class Instructions : public Register, public Error, public Constants
 		int reg_value;
 		if (src == "m")
 		{
-			if (checkAddr({ rpValueOut("m") }, "s"))
+			if (checkAddr({ rpValueOut("h") }, "s", 8192))
 			{
-				reg_value = memory[rpValueOut("m")].toInt();
+				reg_value = memory[rpValueOut("h")].toInt();
 			}
 			else { return false; }
 		}
@@ -789,11 +810,11 @@ class Instructions : public Register, public Error, public Constants
 			int reg_value;
 			if(src == "m")
 			{
-				if (!checkAddr({ rpValueOut("m") }, "s"))
+				if (!checkAddr({ rpValueOut("h") }, "s", 8192))
 					return false;
 
-				reg_value = memory[rpValueOut("m")].toInt();
-				memory[rpValueOut("m")] += 1;
+				reg_value = memory[rpValueOut("h")].toInt();
+				memory[rpValueOut("h")] += 1;
 			}
 			else
 			{
@@ -818,11 +839,11 @@ class Instructions : public Register, public Error, public Constants
 			int reg_value;
 			if (src == "m")
 			{
-				if (!checkAddr({ rpValueOut("m") }, "s"))
+				if (!checkAddr({ rpValueOut("h") }, "s", 8192))
 					return false;
 
-				reg_value = memory[rpValueOut("m")].toInt();
-				memory[rpValueOut("m")] -= 1;
+				reg_value = memory[rpValueOut("h")].toInt();
+				memory[rpValueOut("h")] -= 1;
 			}
 			else
 			{
@@ -907,9 +928,9 @@ class Instructions : public Register, public Error, public Constants
 		{
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
+				if (checkAddr({ rpValueOut("h") }, "s", 8192))
 				{
-					reg["a"] &= memory[rpValueOut("m")];
+					reg["a"] &= memory[rpValueOut("h")];
 					return true;
 				}
 				else { return false; }
@@ -950,9 +971,9 @@ class Instructions : public Register, public Error, public Constants
 		{
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
+				if (checkAddr({ rpValueOut("h") }, "s", 8192))
 				{
-					reg["a"] |= memory[rpValueOut("m")];
+					reg["a"] |= memory[rpValueOut("h")];
 					return true;
 				}
 				else { return false; }
@@ -993,9 +1014,9 @@ class Instructions : public Register, public Error, public Constants
 		{
 			if (src == "m")
 			{
-				if (checkAddr({ rpValueOut("m") }, "s"))
+				if (checkAddr({ rpValueOut("h") }, "s", 8192))
 				{
-					reg["a"] ^= memory[rpValueOut("m")];
+					reg["a"] ^= memory[rpValueOut("h")];
 					return true;
 				}
 				else { return false; }
@@ -1039,10 +1060,10 @@ class Instructions : public Register, public Error, public Constants
 
 		if (src == "m")
 		{
-			if (!checkAddr({ rpValueOut("m") }, "s"))
+			if (!checkAddr({ rpValueOut("h") }, "s", 8192))
 				return false;
 
-			reg_value = memory[rpValueOut("m")].toInt();
+			reg_value = memory[rpValueOut("h")].toInt();
 		}
 		else
 			reg_value = reg[src].toInt();
@@ -1156,6 +1177,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (!loop_count)
 		{
 			if (reg16["pc"] == labelMap[src])
@@ -1165,11 +1196,11 @@ class Instructions : public Register, public Error, public Constants
 			}
 			cout << LOOP_STARTED;
 			loop_count++;
-			reg16["pc"] = labelMap[src];
 		}
-		else
-			reg16["pc"] = labelMap[src] - 1;
 
+		int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 
 		return true;
 	}
@@ -1182,6 +1213,16 @@ class Instructions : public Register, public Error, public Constants
 		if(!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (!flags[ZERO_BIT])
 		{
 			if (!loop_count)
@@ -1193,10 +1234,13 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
+
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
+
 		}
 		else
 		{
@@ -1216,7 +1260,17 @@ class Instructions : public Register, public Error, public Constants
 
 		if (!checkLabel(src))
 			return false;
+		
+		map<string, string> op = this->inst[labelMap[src] - 1];
 
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+		
 		if (flags[ZERO_BIT])
 		{
 			if (!loop_count)
@@ -1228,10 +1282,12 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
+
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1252,6 +1308,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (!flags[CARRY_BIT])
 		{
 			if (!loop_count)
@@ -1263,10 +1329,12 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
+
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1287,6 +1355,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (flags[CARRY_BIT])
 		{
 			if (!loop_count)
@@ -1298,10 +1376,12 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
+
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1322,6 +1402,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (flags[PARITY_BIT])
 		{
 			if (!loop_count)
@@ -1333,10 +1423,12 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
+
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1357,6 +1449,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkLabel(src))
 			return false;
 
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] == "sbr")
+		{
+			cout << INVALID_JUMP;
+			return false;
+		}
+
 		if (!flags[PARITY_BIT])
 		{
 			if (!loop_count)
@@ -1368,10 +1470,11 @@ class Instructions : public Register, public Error, public Constants
 				}
 				cout << LOOP_STARTED;
 				loop_count++;
-				reg16["pc"] = labelMap[src];
 			}
-			else
-				reg16["pc"] = labelMap[src] - 1;
+
+			int val = (bool)(sub_routine_count + loop_count);
+
+			reg16["pc"] = labelMap[src] - val;
 		}
 		else
 		{
@@ -1402,14 +1505,14 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 		}
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1435,14 +1538,14 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[ZERO_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1468,14 +1571,14 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[ZERO_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1501,14 +1604,14 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[CARRY_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1534,14 +1637,14 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[CARRY_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1567,14 +1670,14 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[PARITY_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1600,14 +1703,14 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[PARITY_BIT])
 			return true;
 
-		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+		sub_stack.push(pair<string, _Bit16>(src, reg16["pc"]));
 
-		sub_stack.push(src);
-		reg16["pc"] = labelMap[src];
-		loop_count++;
+		const int val = (bool)(sub_routine_count + loop_count);
+
+		reg16["pc"] = labelMap[src] - val;
 		sub_routine_count++;
 
-		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+		cout << INSIDE_SUB << sub_stack.top().first << ".\n\n";
 
 		return true;
 	}
@@ -1617,15 +1720,11 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 0))
 			return false;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
-
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
+		reg16["pc"] = sub_stack.top().second;
+		
 		sub_routine_count--;
 
-		cout << RETURN_SUB <<  sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1640,15 +1739,11 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[CARRY_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
-
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
+		reg16["pc"] = sub_stack.top().second;
+		
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1663,15 +1758,11 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[CARRY_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
+		reg16["pc"] = sub_stack.top().second;
 
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1686,15 +1777,11 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[ZERO_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
+		reg16["pc"] = sub_stack.top().second;
 
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1709,15 +1796,11 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[ZERO_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
-
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
+		reg16["pc"] = sub_stack.top().second;
+		
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1732,15 +1815,11 @@ class Instructions : public Register, public Error, public Constants
 		if (!flags[PARITY_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
-
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
+		reg16["pc"] = sub_stack.top().second;
+	
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1755,15 +1834,11 @@ class Instructions : public Register, public Error, public Constants
 		if (flags[PARITY_BIT])
 			return true;
 
-		while (!programStack.empty() and programStack.top().first != sub_stack.top())
-			programStack.pop();
-
-		reg16["pc"] = programStack.top().second;
-		programStack.pop();
-		loop_count--;
+		reg16["pc"] = sub_stack.top().second;
+	
 		sub_routine_count--;
 
-		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+		cout << RETURN_SUB << sub_stack.top().first << ".\n\n";
 
 		sub_stack.pop();
 
@@ -1784,7 +1859,26 @@ class Instructions : public Register, public Error, public Constants
 		if(!checkRP(src))
 			return false;
 
-		programStack.push(pair<string, _Bit16>(src, rpValueOut(src)));
+		reg16["sp"] += 1;
+
+		if(!checkAddr({reg16["sp"],reg16["sp"] + 1},"d",4096, 8192))
+			return false;
+		if (src == "h")
+		{
+			memory[reg16["sp"]] = reg["l"];
+			memory[reg16["sp"] + 1] = reg["h"];
+		}
+		if (src == "b")
+		{
+			memory[reg16["sp"]] = reg["c"];
+			memory[reg16["sp"] + 1] = reg["b"];
+		}
+		if (src == "d")
+		{
+			memory[reg16["sp"]] = reg["e"];
+			memory[reg16["sp"] + 1] = reg["d"];
+		}
+		reg16["sp"] += 1;
 
 		return true;
 	}
@@ -1797,16 +1891,16 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkRP(src))
 			return false;
 
-		string rp = programStack.top().first;
-
-		if(rp != src)
-		{
-			cout << INVALID_POP;
+		if(!checkAddr({reg16["sp"] - 1,reg16["sp"]},"s",4096, 8192))
 			return false;
-		}
 
-		programStack.push(pair<string, _Bit16>(src, rpValueOut(src)));
+		rpValueIn(src, memory[reg16["sp"]], memory[reg16["sp"] - 1]);
 
+		memory.erase(reg16["sp"]);
+		memory.erase(reg16["sp"] - 1);
+
+		reg16["sp"] -= 2;
+	
 		return true;
 	}
 
@@ -1815,7 +1909,10 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 0))
 			return false;
 
-		push("", "h");
+		if(!checkAddr({rpValueOut("h")},"d",4096,8192))
+			return false;
+
+		reg16["sp"] = rpValueOut("h");
 
 		return true;
 	}
@@ -1825,23 +1922,14 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 0))
 			return false;
 
-
-		if(programStack.empty())
-		{
-			cout << EMPTY_STACK;
-			return false;
-		}
-
-		_Bit16 bit16 = programStack.top().second;
-
-		if (!checkAddr({ bit16, bit16 + 1 }, "s"))
+		if (!checkAddr({ reg16["sp"] - 1, reg16["sp"] }, "s", 4096, 8192))
 			return false;
 
-		_Bit8 bitl = memory[bit16];
-		_Bit8 bith = memory[bit16 + 1];
+		_Bit8 bitl = memory[reg16["sp"] - 1];
+		_Bit8 bith = memory[reg16["sp"]];
 
-		memory[bit16] = reg["l"];
-		memory[bit16 + 1] = reg["h"];
+		memory[reg16["sp"] - 1] = reg["l"];
+		memory[reg16["sp"]] = reg["h"];
 
 		reg["l"] = bitl;
 		reg["h"] = bith;
@@ -1866,6 +1954,34 @@ public:
 	bool isSubRoutineEnable = false;
 	int sub_routine_count = 0;
 
+	void pushM(_Bit8 higher_bits, _Bit8 lower_bits)
+	{
+		reg16["sp"] += 1;
+		memory[reg16["sp"]] = lower_bits;
+		memory[reg16["sp"] + 1] = higher_bits;
+		reg16["sp"] += 1;
+	}
+
+	_Bit16 topM()
+	{
+		_Bit8 hBits = memory[reg16["sp"]];
+		_Bit8 lBits = memory[reg16["sp"] + 1];
+		return hBits.toInt() * 256 + lBits.toInt();
+	}
+
+	void popM()
+	{
+		reg16["sp"] -= 2;
+	}
+
+	bool emptyM()
+	{
+		if(reg16["sp"] == 0x0fff)
+			return true;
+		else
+			return false;
+	}
+
 
 	Instructions()
 	{
@@ -1874,7 +1990,6 @@ public:
 		this->funMap["shm"] = bind(&Instructions::shm, this, _1, _2);
 		this->funMap["shl"] = bind(&Instructions::shl, this, _1, _2);
 		this->funMap["shf"] = bind(&Instructions::shf, this, _1, _2);
-		this->funMap["shsr"] = bind(&Instructions::shsr, this, _1, _2);
 		this->funMap["shlp"] = bind(&Instructions::shlp, this, _1, _2);
 		this->funMap["htd"] = bind(&Instructions::htd, this, _1, _2);
 		this->funMap["hlp"] = bind(&Instructions::hlp, this, _1, _2);

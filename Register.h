@@ -18,8 +18,7 @@ public:
 	map<_Bit16, map<string, string>> inst;
 	map<_Label, _Bit16> labelMap;
 	map<_Bit16, _Bit8> memory;
-	stack <pair<string, _Bit16>> programStack;
-	stack<string> sub_stack;
+	stack <pair<string, _Bit16>> sub_stack;
 
 	Register()
 	{
@@ -33,6 +32,6 @@ public:
 		reg["m"] = 0;
 
 		reg16["pc"] = 0;
-		reg16["sp"] = 0;
+		reg16["sp"] = 0x0fff;
 	}
 };

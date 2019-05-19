@@ -55,7 +55,7 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 
 	void execute_sub_or_loop()
 	{
-		while(loop_count)
+		while(loop_count || sub_routine_count)
 		{
 			execute();
 		}
@@ -151,44 +151,39 @@ public:
 						, op[constants.MAP_SRC]
 						);
 
-					if (!isLoopStarted && loop_count)
+					if (!isLoopStarted and (loop_count or sub_routine_count))
 					{
 						isLoopStarted = true;
 						execute_sub_or_loop();
 					}
-					if (isLoopStarted && !loop_count)
+					if (isLoopStarted and !(loop_count or sub_routine_count))
 						isLoopStarted = false;
 
 					if (!isExecuted)
 					{
-						if (!loop_count && !isSubRoutineEnable)
+						if (!loop_count and !isSubRoutineEnable)
 						{
 							deleteInst();
 							return false;
 						}
 
-						if (!programStack.empty())
+						reg16["pc"] = sub_stack.top().second;
+						sub_stack.pop();
+						
+						--sub_routine_count;
+
+						if (!sub_routine_count)
 						{
-							while (!programStack.empty() and programStack.top().first != sub_stack.top())
-								programStack.pop();
-
-							reg16["pc"] = programStack.top().second;
-							programStack.pop();
-							sub_stack.pop();
-							--sub_routine_count;
-
-							if (sub_routine_count == 0)
-							{
-								isLoopStarted = false;;
-								loop_count--;
-							}
+							if (!loop_count)
+								isLoopStarted = false;
 						}
+						
 					}
 				}
 				else
 				{
 					deleteInst();
-					cout << INVALID_INST << opcode << "\n\n";
+					cout << INVALID_INST;
 					return false;
 				}
 			}
