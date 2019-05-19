@@ -1414,6 +1414,204 @@ class Instructions : public Register, public Error, public Constants
 		return true;
 	}
 
+	bool cz(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (!flags[ZERO_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool cnz(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (flags[ZERO_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool cnc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (flags[CARRY_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool cc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (!flags[CARRY_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool cpe(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (!flags[PARITY_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
+	bool cpo(string dest, string src)
+	{
+		if (!checkParams(dest, src, 1))
+			return false;
+
+		if (!checkLabel(src))
+			return false;
+
+		map<string, string> op = this->inst[labelMap[src] - 1];
+
+		Constants c;
+
+		if (op[c.MAP_OPCODE] != "sbr")
+		{
+			cout << INVALID_CALL;
+			return false;
+		}
+
+		if (flags[PARITY_BIT])
+			return true;
+
+		programStack.push(pair<string, _Bit16>(src, reg16["pc"]));
+
+		sub_stack.push(src);
+		reg16["pc"] = labelMap[src];
+		loop_count++;
+		sub_routine_count++;
+
+		cout << INSIDE_SUB << sub_stack.top() << ".\n\n";
+
+		return true;
+	}
+
 	bool ret(string dest, string src)
 	{
 		if (!checkParams(dest, src, 0))
@@ -1433,6 +1631,145 @@ class Instructions : public Register, public Error, public Constants
 
 		return true;
 	}
+
+	bool rc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (!flags[CARRY_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
+	bool rnc(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (flags[CARRY_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
+	bool rz(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (!flags[ZERO_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
+	bool rnz(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (flags[ZERO_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
+	bool rpe(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (!flags[PARITY_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
+	bool rpo(string dest, string src)
+	{
+		if (!checkParams(dest, src, 0))
+			return false;
+
+		if (flags[PARITY_BIT])
+			return true;
+
+		while (!programStack.empty() and programStack.top().first != sub_stack.top())
+			programStack.pop();
+
+		reg16["pc"] = programStack.top().second;
+		programStack.pop();
+		loop_count--;
+		sub_routine_count--;
+
+		cout << RETURN_SUB << sub_stack.top() << ".\n\n";
+
+		sub_stack.pop();
+
+		return true;
+	}
+
 
 	/*
 	 *	These are the I/O and Machine Control Group of Instructions
