@@ -1,11 +1,11 @@
 #pragma once
 
 
-#include<map>
-#include<stack>
+#include <map>
+#include <stack>
 
-#include"Instructions.h"
-#include"Register.h"
+#include "Instructions.h"
+#include "Register.h"
 #include "Constants.h"
 #include "interfaces.h"
 #include "Error.h"
@@ -23,8 +23,6 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 
 	_Label label;
 	vector<string> strs;
-	bool isHLT = false;
-
 
 	bool addLabel()
 	{
@@ -103,9 +101,6 @@ public:
 			return this;
 		}
 
-		if (input == "hlt")
-			this->isHLT = true;
-
 		vector<string> inst = str_split(input, ":");
 
 		this->label = inst.size() > 1 ? trim(inst[0]) : "";
@@ -158,7 +153,7 @@ public:
 		return this;
 	}
 
-	bool execute() override
+	void execute() override
 	{
 		if (isSaveSuccessful)
 		{
@@ -180,7 +175,7 @@ public:
 						isLoopStarted = true;
 						reg16["pc"] += 1;
 						execute_sub_or_loop();
-						return false;
+						return;
 					}
 					if (isLoopStarted and !(isLoopEnable or sub_routine_count))
 						isLoopStarted = false;
@@ -191,7 +186,7 @@ public:
 						if (!isLoopEnable and !sub_routine_count)
 						{
 							deleteInst();
-							return false;
+							return;
 						}
 
 						stopLoop(op);
@@ -207,7 +202,7 @@ public:
 					else 
 					{
 						deleteInst();
-						return false;
+						return;
 					}
 					
 				}
@@ -223,6 +218,5 @@ public:
 			}
 			reg16["pc"] += 1;
 		}
-		return this->isHLT;
 	}
 };

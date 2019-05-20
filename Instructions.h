@@ -1945,8 +1945,9 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 
 		cout << "\nPress ENTER to exit";
+		while (_getch() != 13);
+		exit(0);
 
-		return true;
 	}
 
 public:

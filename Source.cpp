@@ -2,10 +2,9 @@
 #include<functional>
 #include <vector>
 #include<string>
-#include<conio.h>
+#include <conio.h>
 
 #include "Compiler.h"
-#include "functions.h"
 
 using namespace std;
 
@@ -20,13 +19,11 @@ int main()
 	{
 		getline(cin, input);
 
-		isHLT = compiler
+		compiler
 		        ->process(input)
 		        ->save()
 		        ->execute();
 	}
-	while (!isHLT);
-
-	while (_getch() != 13);
+	while (true);
 	return 0;
 }

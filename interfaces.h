@@ -3,7 +3,7 @@
 class CompilerExecute
 {
 public:
-	virtual bool execute() = 0;
+	virtual void execute() = 0;
 };
 
 class CompilerSave
