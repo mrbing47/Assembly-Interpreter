@@ -20,5 +20,7 @@ public:
 	const string INVALID_JUMP = "\nERROR: INVALID_JUMP, only use JUMP for loops.\n\n";
 	const string INVALID_POP = "\nERROR: INVALID_POP, can not find the rp in the top of the stack.\n\n";
 	const string EMPTY_STACK = "\nERROR: EMPTY_STACK\n\n";
+	const string ERROR_PT = "\nERROR_POINT-> ";
+	const string ERROR_INSIDE = "\nERROR INSIDE->  ";
 };
 

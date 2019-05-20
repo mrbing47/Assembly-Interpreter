@@ -353,7 +353,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkParams(dest, src, 0))
 			return false;
 
-		cout << loop_count << endl;
+		cout << isLoopEnable << endl;
 		return true;
 	}
 
@@ -1186,7 +1186,7 @@ class Instructions : public Register, public Error, public Constants
 			return false;
 		}
 
-		if (!loop_count)
+		if (!isLoopEnable)
 		{
 			if (reg16["pc"] == labelMap[src])
 			{
@@ -1194,9 +1194,11 @@ class Instructions : public Register, public Error, public Constants
 				return false;
 			}
 			cout << LOOP_STARTED;
-			loop_count++;
 		}
 
+		loop_set.insert(reg16["pc"]);
+
+		isLoopEnable = true;
 		reg16["pc"] = labelMap[src] - 1;
 
 		return true;
@@ -1222,7 +1224,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (!flags[ZERO_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1230,19 +1232,26 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
 			}
 
+			loop_set.insert(reg16["pc"]);
+
+			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
+			
+
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
-		}
+			loop_set.erase(reg16["pc"]);
 
+			if (loop_set.empty())
+				isLoopEnable = false;
+
+		}
 		return true;
 	}
 
@@ -1266,7 +1275,7 @@ class Instructions : public Register, public Error, public Constants
 		
 		if (flags[ZERO_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1274,18 +1283,22 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
-
 			}
 
+			loop_set.insert(reg16["pc"]);
+
+			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
+			loop_set.erase(reg16["pc"]);
+
+			if(loop_set.empty())
+				isLoopEnable = false;
 		}
 
 		return true;
@@ -1311,7 +1324,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (!flags[CARRY_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1319,18 +1332,23 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
-
+			
 			}
 
+			loop_set.insert(reg16["pc"]);
+
+			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
+			loop_set.erase(reg16["pc"]);
+
+			if (loop_set.empty())
+				isLoopEnable = false;
 		}
 
 		return true;
@@ -1356,7 +1374,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (flags[CARRY_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1364,18 +1382,22 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
-
 			}
 
+			loop_set.insert(reg16["pc"]);
+
+			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
+			loop_set.erase(reg16["pc"]);
+
+			if (loop_set.empty())
+				isLoopEnable = false;
 		}
 
 		return true;
@@ -1401,7 +1423,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (flags[PARITY_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1409,18 +1431,23 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
-
+			
 			}
 
+			loop_set.insert(reg16["pc"]);
+
+			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
+			loop_set.erase(reg16["pc"]);
+
+			if (loop_set.empty())
+				isLoopEnable = false;
 		}
 
 		return true;
@@ -1446,7 +1473,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (!flags[PARITY_BIT])
 		{
-			if (!loop_count)
+			if (!isLoopEnable)
 			{
 				if (reg16["pc"] == labelMap[src])
 				{
@@ -1454,18 +1481,22 @@ class Instructions : public Register, public Error, public Constants
 					return false;
 				}
 				cout << LOOP_STARTED;
-				loop_count++;
 			}
 
-			reg16["pc"] = labelMap[src] - 1;
+			loop_set.insert(reg16["pc"]);
 
+			isLoopEnable = true;
+			reg16["pc"] = labelMap[src] - 1;
 		}
 		else
 		{
-			if (loop_count)
+			if (loop_set.size() == 1)
 				cout << LOOP_ENDED;
 
-			loop_count--;
+			loop_set.erase(reg16["pc"]);
+
+			if (loop_set.empty())
+				isLoopEnable = false;
 		}
 
 		return true;
@@ -1924,7 +1955,7 @@ class Instructions : public Register, public Error, public Constants
 public:
 
 	map<string, function<bool(string, string)>> funMap;
-	int loop_count = 0;
+	bool isLoopEnable = false;
 	bool isSubRoutineEnable = false;
 	int sub_routine_count = 0;
 

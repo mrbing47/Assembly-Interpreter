@@ -53,9 +53,28 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 		inst.erase(reg16["pc"]);
 	}
 
+	void stopLoop(map<string, string> op)
+	{
+		cout << ERROR_PT
+			<< op[constants.MAP_OPCODE] << ' '
+			<< op[constants.MAP_DEST] << ' '
+			<< op[constants.MAP_SRC];
+		cout << ERROR_INSIDE << sub_stack.top().first << "\n\n";
+
+		reg16["pc"] = sub_stack.top().second;
+		sub_stack.pop();
+
+		--sub_routine_count;
+
+		if (!sub_routine_count and !isLoopEnable)
+		{
+			isLoopStarted = false;
+		}
+	}
+
 	void execute_sub_or_loop()
 	{
-		while(loop_count || sub_routine_count)
+		while(isLoopEnable || sub_routine_count)
 		{
 			execute();
 		}
@@ -151,41 +170,41 @@ public:
 						, op[constants.MAP_SRC]
 						);
 
-					if (!isLoopStarted and (loop_count or sub_routine_count))
+					if (!isLoopStarted and (isLoopEnable or sub_routine_count))
 					{
 						isLoopStarted = true;
 						reg16["pc"] += 1;
 						execute_sub_or_loop();
+						return false;
 					}
-					if (isLoopStarted and !(loop_count or sub_routine_count))
+					if (isLoopStarted and !(isLoopEnable or sub_routine_count))
 						isLoopStarted = false;
+					
 
 					if (!isExecuted)
 					{
-						if (!loop_count and !isSubRoutineEnable)
+						if (!isLoopEnable and !sub_routine_count)
 						{
 							deleteInst();
 							return false;
 						}
 
-						reg16["pc"] = sub_stack.top().second;
-						sub_stack.pop();
-						
-						--sub_routine_count;
-
-						if (!sub_routine_count)
-						{
-							if (!loop_count)
-								isLoopStarted = false;
-						}
-						
+						stopLoop(op);
 					}
 				}
 				else
 				{
-					deleteInst();
 					cout << INVALID_INST;
-					return false;
+					if(sub_routine_count)
+					{
+						stopLoop(op);
+					}
+					else 
+					{
+						deleteInst();
+						return false;
+					}
+					
 				}
 			}
 			else
@@ -198,7 +217,6 @@ public:
 				}
 			}
 			reg16["pc"] += 1;
-
 		}
 		return this->isHLT;
 	}

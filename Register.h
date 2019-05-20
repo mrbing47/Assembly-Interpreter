@@ -1,6 +1,7 @@
 #pragma once
 
 #include<map>
+#include <set>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ public:
 	map<_Label, _Bit16> labelMap;
 	map<_Bit16, _Bit8> memory;
 	stack <pair<string, _Bit16>> sub_stack;
+	set<_Bit16> loop_set;
 
 	Register()
 	{
