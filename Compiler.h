@@ -55,10 +55,15 @@ class Compiler : public Instructions, public CompilerExecute, public CompilerSav
 
 	void stopLoop(map<string, string> op)
 	{
-		cout << ERROR_PT
-			<< op[constants.MAP_OPCODE] << ' '
-			<< op[constants.MAP_DEST] << ' '
-			<< op[constants.MAP_SRC];
+		cout << ERROR_PT;
+
+		cout << op[constants.MAP_OPCODE] << ' ';
+
+		if (!op[constants.MAP_DEST].empty())
+			cout << op[constants.MAP_DEST] << ' ';
+
+		cout << op[constants.MAP_SRC];
+		
 		cout << ERROR_INSIDE << sub_stack.top().first << "\n\n";
 
 		reg16["pc"] = sub_stack.top().second;
