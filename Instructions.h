@@ -38,10 +38,11 @@ class Instructions : public Register, public Error, public Constants
 			if (isCarry)
 				flags[CARRY_BIT] = res_value >= 256 ? true : false;
 		}
-		if (type_op == SUBTRACTION and isCarry)
+		if (type_op == SUBTRACTION)
 		{
 			res_value = num1 - num2;
-			flags[CARRY_BIT] = num1 < num2 ? true : false;
+			if (isCarry)
+				flags[CARRY_BIT] = num1 < num2 ? true : false;
 		}
 
 		flags[ZERO_BIT] = res_value % 256 == 0 ? true : false;
@@ -1235,8 +1236,7 @@ class Instructions : public Register, public Error, public Constants
 
 			isLoopEnable = true;
 			reg16["pc"] = labelMap[src] - 1;
-			
-
+		
 		}
 		else
 		{
