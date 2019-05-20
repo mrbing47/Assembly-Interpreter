@@ -12,7 +12,6 @@
 #include "Constants.h"
 #include "Error.h"
 #include "datatypes.h"
-#include <iso646.h>
 
 using namespace std;
 using namespace std::placeholders;
@@ -26,17 +25,24 @@ class Instructions : public Register, public Error, public Constants
 		They help to minimise the code as much as possible
 	*/
 
-	void update_flags(_Bit8 num1, _Bit8 num2, int res_value, string type_op)
+	void update_flags(int num1, int num2, string type_op, bool isCarry)
 	{
+		int res_value = 0;
 		if (type_op == ADDITION)
 		{
-			int temp = (num1.toInt() & 15) + (num2.toInt() & 15);
+			res_value = num1 + num2;
+			int temp = (num1 & 15) + (num2 & 15);
 
 			flags[AUX_CARRY_BIT] = ((int)log2(temp) + 1) > 4 ? true : false;
 
-			flags[CARRY_BIT] = res_value > 255 ? true : false;
+			if (isCarry)
+				flags[CARRY_BIT] = res_value >= 256 ? true : false;
 		}
-		if (type_op == SUBTRACTION) { flags[CARRY_BIT] = num1 < num2 ? true : false; }
+		if (type_op == SUBTRACTION and isCarry)
+		{
+			res_value = num1 - num2;
+			flags[CARRY_BIT] = num1 < num2 ? true : false;
+		}
 
 		flags[ZERO_BIT] = res_value % 256 == 0 ? true : false;
 
@@ -624,9 +630,10 @@ class Instructions : public Register, public Error, public Constants
 			else
 				reg_value = reg[src].toInt();
 
-			update_flags(reg["a"], reg_value, reg_value + reg["a"].toInt(), ADDITION);
+			update_flags(reg["a"].toInt(), reg_value, ADDITION, true);
 
 			reg["a"] += reg_value;
+
 			return true;
 		}
 		else
@@ -643,7 +650,6 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkReg(dest, src, 8))
 		{
-			int res_value;
 			int reg_value;
 
 			if (src == "m")
@@ -656,9 +662,9 @@ class Instructions : public Register, public Error, public Constants
 			else
 				reg_value = reg[src].toInt();
 
-			res_value = reg["a"].toInt() + reg_value + (int)flags[CARRY_BIT];
+			update_flags(reg["a"].toInt(), reg_value + (int)flags[CARRY_BIT], ADDITION, true);
 
-			update_flags(reg["a"], reg_value, res_value, ADDITION);
+			reg["a"] = reg["a"].toInt() + reg_value + (int)flags[CARRY_BIT];
 
 			return true;
 		}
@@ -672,14 +678,13 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkReg(dest, src, 8))
 		{
-			int res_value;
 			int dec = hexToDec(src);
 
 			if (checkHex(dec, 8))
 			{
-				res_value = reg["a"].toInt() + dec + (int)flags[CARRY_BIT];
+				update_flags(reg["a"].toInt(), dec + (int)flags[CARRY_BIT], ADDITION, true);
 
-				update_flags(reg["a"], dec, res_value, ADDITION);
+				reg["a"] = reg["a"].toInt() + dec + (int)flags[CARRY_BIT];
 
 				return true;
 			}
@@ -698,7 +703,8 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkHex(dec, 8))
 		{
-			update_flags(reg["a"], dec, reg["a"].toInt() + dec, ADDITION);
+			update_flags(reg["a"].toInt(), dec, ADDITION, true);
+
 			reg["a"] += dec;
 		}
 		else
@@ -727,7 +733,7 @@ class Instructions : public Register, public Error, public Constants
 		}
 		else { reg_value = reg[src].toInt(); }
 
-		update_flags(reg["a"], reg_value, reg["a"].toInt()- reg_value, SUBTRACTION);
+		update_flags(reg["a"].toInt(), reg_value, SUBTRACTION, true);
 
 		reg["a"] -= reg_value;
 		return true;
@@ -742,7 +748,7 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkHex(dec, 8))
 		{
-			update_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
+			update_flags(reg["a"].toInt(), dec, SUBTRACTION, true);
 			reg["a"] -= dec;
 		}
 		else
@@ -771,9 +777,9 @@ class Instructions : public Register, public Error, public Constants
 		else
 			reg_value = reg[src].toInt();
 
-		int res = reg["a"].toInt() - reg_value - (int)flags[CARRY_BIT];
+		update_flags(reg["a"].toInt(), reg_value - (int)flags[CARRY_BIT], SUBTRACTION, true);
 
-		update_flags(reg["a"], reg_value, res, SUBTRACTION);
+		reg["a"] = reg["a"].toInt() - reg_value - (int)flags[CARRY_BIT];
 		return true;
 	}
 
@@ -784,14 +790,12 @@ class Instructions : public Register, public Error, public Constants
 
 		if (checkReg(dest, src, 8))
 		{
-			int res_value;
 			int dec = hexToDec(src);
 
 			if (checkHex(dec, 8))
 			{
-				res_value = reg["a"].toInt() - dec - (int)flags[CARRY_BIT];
-
-				update_flags(reg["a"], dec, res_value, SUBTRACTION);
+				update_flags(reg["a"].toInt(), dec - (int)flags[CARRY_BIT], SUBTRACTION, true);
+				reg["a"] = reg["a"].toInt() - dec - (int)flags[CARRY_BIT];
 
 				return true;
 			}
@@ -822,7 +826,7 @@ class Instructions : public Register, public Error, public Constants
 				reg[src] += 1;
 			}
 
-			update_flags(reg_value, 1, reg_value + 1, ADDITION);
+			update_flags(reg_value, 1, ADDITION, false);
 		}
 		else
 			return false;
@@ -853,7 +857,7 @@ class Instructions : public Register, public Error, public Constants
 			reg[src] -= 1;
 		}
 
-		update_flags(reg_value, 1, reg_value - 1, SUBTRACTION);
+		update_flags(reg_value, 1, SUBTRACTION, false);
 
 		return true;
 	}
@@ -866,12 +870,7 @@ class Instructions : public Register, public Error, public Constants
 		if(!checkRP(src))
 			return false;
 
-		_Bit16 bit16 = rpValueOut(src);
-		bit16 += 1;
-		rpValueIn(src, bit16);
-
-		
-
+		rpValueIn(src, rpValueOut(src) + 1);
 		return true;
 
 	}
@@ -884,9 +883,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkRP(src))
 			return false;
 
-		_Bit16 bit16 = rpValueOut(src);
-		bit16 -= 1;
-		rpValueIn(src, bit16);
+		rpValueIn(src, rpValueOut(src) - 1);
 
 		return true;
 
@@ -1067,7 +1064,7 @@ class Instructions : public Register, public Error, public Constants
 		else
 			reg_value = reg[src].toInt();
 			
-		update_flags(reg["a"], reg_value, reg["a"].toInt() - reg_value, SUBTRACTION);
+		update_flags(reg["a"].toInt(), reg_value, SUBTRACTION, true);
 
 		return true;
 	}
@@ -1082,7 +1079,7 @@ class Instructions : public Register, public Error, public Constants
 		if (!checkHex(dec, 8))
 			return false;
 
-		update_flags(reg["a"], dec, reg["a"].toInt() - dec, SUBTRACTION);
+		update_flags(reg["a"].toInt(), dec, SUBTRACTION, true);
 
 		return true;
 	}
